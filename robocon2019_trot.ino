@@ -2,8 +2,6 @@
 	
 	！　ピンの番号が一致しているか要確認　！
 	
-	Lipoで動かすときはSerial.print消したほうがいいかも
-	
 *****************************************/
 
 
@@ -1045,7 +1043,7 @@ void timerWarikomi_10ms() {
 		
 		// sabertoothに送るコマンド
 		FLAcmd += FLAsokudoPID.getCmd(refFLAsokudo, FLAsokudo, 30.0) * ( -1.0 / 127.0 ); // 20より大きくするとcmdの値がいきなり大きく変わる
-		FLLcmd += FLLsokudoPID.getCmd(refFLLsokudo, FLLsokudo, 127.0) * ( 1.0 / 127.0 );
+		FLLcmd += FLLsokudoPID.getCmd(refFLLsokudo, FLLsokudo, 76.0) * ( 1.0 / 127.0 );//127.0) * ( 1.0 / 127.0 );
 		BLAcmd += BLAsokudoPID.getCmd(refBLAsokudo, BLAsokudo, 30.0) * ( -1.0 / 127.0 );
 		BLLcmd += BLLsokudoPID.getCmd(refBLLsokudo, BLLsokudo, 127.0) * ( -1.0 / 127.0 );
 		FRAcmd += FRAsokudoPID.getCmd(refFRAsokudo, FRAsokudo, 30.0) * ( 1.0 / 127.0 );
@@ -1064,6 +1062,11 @@ void timerWarikomi_10ms() {
 		}else if( 1.0 < FLLcmd ){
 			FLLcmd = 1.0;
 		}
+		/* if( FLLcmd < -0.6 ){
+			FLLcmd = -0.6;
+		}else if( 0.6 < FLLcmd ){
+			FLLcmd = 0.6;
+		} */
 		if( BLAcmd < -1.0 ){
 			BLAcmd = -1.0;
 		}else if( 1.0 < BLAcmd ){
@@ -1097,13 +1100,16 @@ void timerWarikomi_10ms() {
 		
 		// 動かす
 		saber1.saberCmd(ANGLE_CMD, 0.0);//FLAcmd);
-		if( FLLcmd != 0.0 ){
+		/* if( FLLcmd != 0.0 ){
+			FLLcmd += refFLLsokudo * 0.05;
+		} */
+		/* if( FLLcmd != 0.0 ){
 			if( FLLcmd < 0.0 ){
 				FLLcmd -= 0.02;
 			}else if( FLLcmd > 0.0 ){
 				FLLcmd += 0.02;
 			}
-		}
+		} */
 		/* if( ( fabs( refFLlinear - FLlinear ) > 0.02 ) && FLLcmd != 0.0 ){
 			if( FLLcmd < 0.0 ){
 				FLLcmd -= 0.03;
