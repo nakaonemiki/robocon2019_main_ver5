@@ -87,8 +87,8 @@ AMT203V BLangleEnc(&SPI, PIN_51);
 AMT203V FRangleEnc(&SPI, PIN_13);
 AMT203V BRangleEnc(&SPI, PIN_12);
 
-PID FLLichiPID(18.0, 0.0, 0.0, INT_TIME);//(20.0, 0.0, 0.15, INT_TIME);
-PID FLAichiPID(10.0, 0.0, 0.0, INT_TIME);
+PID FLLichiPID(24.0, 0.0, 80.0, INT_TIME);
+PID FLAichiPID(30.0, 0.0, 105.0, INT_TIME);//(10.0, 0.0, 0.0, INT_TIME);
 PID FLLsokudoPID(20.0, 0.0, 40.0, INT_TIME);//(20.0, 0.0, 40.0, INT_TIME);//(100.0, 0.0, 225.0, INT_TIME);
 PID FLAsokudoPID(1.5, 0.0, 1.0, INT_TIME);
 
@@ -220,8 +220,8 @@ int mode = 0;
 int n = 0;
 
 // FLA:FLL / BLA:BLL / FRA:FRL / BRA:BRL
-byte init_1st = B10111111;//B00000000;
-byte init_2nd = B10111111;//B00000000;
+byte init_1st = B01111111;//B00000000;
+byte init_2nd = B01111111;//B00000000;
 
 boolean a = false;
 boolean change_shift_flag = false;
@@ -1034,6 +1034,11 @@ void timerWarikomi_10ms() {
 		// 目標速度
 		refFLAsokudo = FLAichiPID.getCmd(refFLangle, FLangle, 6.0);
 		refFLLsokudo = FLLichiPID.getCmd(refFLlinear, FLlinear, 4.0);
+		if(fabs(refFLLsokudo) > 0.05){
+			//cmd_base = cmd_base + cmd_base * G;
+			refFLLsokudo = refFLLsokudo + refFLLsokudo * 0.2;//BLLgain;
+		}
+		
 		refBLAsokudo = BLAichiPID.getCmd(refBLangle, BLangle, 6.0);
 		refBLLsokudo = BLLichiPID.getCmd(refBLlinear, BLlinear, 0.2);
 		refFRAsokudo = FRAichiPID.getCmd(refFRangle, FRangle, 6.0);
@@ -1099,7 +1104,7 @@ void timerWarikomi_10ms() {
 		}
 		
 		// 動かす
-		saber1.saberCmd(ANGLE_CMD, 0.0);//FLAcmd);
+		saber1.saberCmd(ANGLE_CMD, FLAcmd);
 		/* if( FLLcmd != 0.0 ){
 			FLLcmd += refFLLsokudo * 0.05;
 		} */
@@ -1170,7 +1175,7 @@ void timerWarikomi_10ms() {
 			}
 		} */
 		
-		saber1.saberCmd(LINEAR_CMD, FLLcmd);
+		saber1.saberCmd(LINEAR_CMD, 0.0);//FLLcmd);
 		saber2.saberCmd(ANGLE_CMD, 0.0);//BLAcmd);
 		saber2.saberCmd(LINEAR_CMD, 0.0);//BLLcmd);
 		saber3.saberCmd(ANGLE_CMD, 0.0);//FRAcmd);
@@ -1180,15 +1185,15 @@ void timerWarikomi_10ms() {
 		
 		Serial.print(step_count);
 		Serial.print("\t");
-		Serial.print(refFLlinear, 4);
+		Serial.print(refFLangle, 4);//(refFLlinear, 4);
 		Serial.print("\t");
-		Serial.print(FLlinear, 4);
+		Serial.print(FLangle, 4);//(FLlinear, 4);
 		Serial.print("\t");
 		Serial.print(FLLcmd);
 		Serial.print("\t");
-		Serial.print(refFLLsokudo, 4);//(refFLangle, 4);
+		Serial.print(refFLAsokudo, 4);//(refFLLsokudo, 4);//
 		Serial.print("\t");
-		Serial.println(FLLsokudo, 4);//(FLangle, 4);
+		Serial.println(FLAsokudo, 4);//(FLLsokudo, 4);//
 		
 	}
 }
