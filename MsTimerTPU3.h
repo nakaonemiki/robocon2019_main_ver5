@@ -18,6 +18,8 @@ namespace MsTimerTPU3 {
     void start();
     void stop();
     void _overflow();
+
+    //変更しました！
 }
 
 #endif
