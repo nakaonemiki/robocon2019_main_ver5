@@ -33,6 +33,7 @@
 
 //#define PITCH	(3) // mmだと3，mだと0.003
 //#define HASU	(25)
+#define HANKEI	(0.015)
 #define PITCH_HASU	(0.075) // ピッチ(m) * 歯数
 #define ENC_RES	(1000)
 // AMT203用
@@ -41,7 +42,7 @@
 #define PIN_13	(31)
 #define PIN_12	(30)
 #define PIN_FLSW	(A2)
-#define PIN_BLSW	(A1)
+#define PIN_BLSW	(27)
 #define PIN_FRSW	(A5)
 #define PIN_BRSW	(A4)
 #define PIN_START	(28)
@@ -49,6 +50,10 @@
 // mode
 #define STATE_INIT_1ST	(0)
 #define STATE_INIT_2ND	(1)
+
+// height_changeTimingで使用
+#define MAE		(0)
+#define ATO		(1)
 
 // 左右のみ
 #define LEFT	(0)
@@ -87,32 +92,32 @@ AMT203V BLangleEnc(&SPI, PIN_51);
 AMT203V FRangleEnc(&SPI, PIN_13);
 AMT203V BRangleEnc(&SPI, PIN_12);
 
-PID FLLichiPID(24.0, 0.0, 80.0, INT_TIME);
-PID FLAichiPID(30.0, 0.0, 105.0, INT_TIME);//(10.0, 0.0, 0.0, INT_TIME);
-PID FLLsokudoPID(20.0, 0.0, 40.0, INT_TIME);//(20.0, 0.0, 40.0, INT_TIME);//(100.0, 0.0, 225.0, INT_TIME);
-PID FLAsokudoPID(1.5, 0.0, 1.0, INT_TIME);
+PID FLLichiPID(24.0, 0.0, 0.0, INT_TIME);
+PID FLAichiPID(15.0, 0.0, 0.0, INT_TIME);
+PID FLLsokudoPID(32.0, 0.0, 60.0, INT_TIME);
+PID FLAsokudoPID(2.5, 0.0, 4.0, INT_TIME);
 
-PID BLLichiPID(0.0, 0.0, 0.0, INT_TIME);//(20.0, 0.0, 0.0, INT_TIME);
-PID BLAichiPID(10.0, 0.0, 1.0, INT_TIME);
-PID BLLsokudoPID(0.0, 0.0, 0.0, INT_TIME);//(100.0, 0.0, 200.0, INT_TIME);
-PID BLAsokudoPID(1.7, 0.0, 1.0, INT_TIME);
+PID BLLichiPID(23.0, 0.0, 0.0, INT_TIME);
+PID BLAichiPID(12.0, 0.0, 0.0, INT_TIME);
+PID BLLsokudoPID(30.0, 0.0, 60.0, INT_TIME);
+PID BLAsokudoPID(2.0, 0.0, 0.5, INT_TIME);
 
-PID FRLichiPID(0.0, 0.0, 0.0, INT_TIME);//(20.0, 0.0, 0.0, INT_TIME);
-PID FRAichiPID(10.0, 0.0, 0., INT_TIME);
-PID FRLsokudoPID(0.0, 0.0, 0.0, INT_TIME);//(120.0, 0.0, 200.0, INT_TIME);
-PID FRAsokudoPID(1.8, 0.0, 1.0, INT_TIME);
+PID FRLichiPID(24.0, 0.0, 0.0, INT_TIME);
+PID FRAichiPID(12.0, 0.0, 0.0, INT_TIME);
+PID FRLsokudoPID(30.0, 0.0, 60.0, INT_TIME);
+PID FRAsokudoPID(2.0, 0.0, 4.0, INT_TIME);
 
-PID BRLichiPID(18.0, 0.0, 0.0, INT_TIME);//(20.0, 0.0, 0.0, INT_TIME);
-PID BRAichiPID(8.0, 0.0, 0.0, INT_TIME);
-PID BRLsokudoPID(25.0, 0.0, 30.0, INT_TIME);//(120.0, 0.0, 200.0, INT_TIME);
-PID BRAsokudoPID(1.7, 0.0, 0.0, INT_TIME);//(1.7, 0.0, 1.7, INT_TIME);
+PID BRLichiPID(24.0, 0.0, 0.0, INT_TIME);
+PID BRAichiPID(15.0, 0.0, 0.0, INT_TIME);
+PID BRLsokudoPID(30.0, 0.0, 60.0, INT_TIME);
+PID BRAsokudoPID(2.5, 0.0, 4.0, INT_TIME);
 
-//SoftwareSerial SWSerial2(26, 24); // rx, tx
-SoftwareSerial SWSerial1(7, 6); // rx, tx
-Sabertooth ST1(128, SWSerial1);
-Sabertooth ST2(130, SWSerial1);
-Sabertooth ST3(129, SWSerial1);
-Sabertooth ST4(131, SWSerial1);
+//SoftwareSerial SWSerial2(7, 6); // rx, tx
+SoftwareSerial SWSerial1(26, 24);// rx, tx
+Sabertooth ST1(129, SWSerial1);//FL
+Sabertooth ST2(130, SWSerial1);//BL
+Sabertooth ST3(128, SWSerial1);//FR
+Sabertooth ST4(131, SWSerial1);//BR
 
 mySaberClass saber1(&ST1);
 mySaberClass saber2(&ST2);
@@ -122,8 +127,8 @@ mySaberClass saber4(&ST4);
 /*****************************************
 	宣言
 *****************************************/
-double kataSokudo = 0.2;//0.2;//0.25;//0.2;//2;
-double kata_sokudo[4 + 1] = { 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
+double kataSokudo = 0.18;//0.25;//0.2;//2;
+double kata_sokudo[4 + 1] = { 0.15, 0.15, 0.15, 0.15, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
 //double kataSokudo = 0.125;//constNum = 0.005
 //double kataSokudo = 0.1;//constNum = 0.004
 
@@ -136,19 +141,19 @@ double kata_sokudo[4 + 1] = { 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 
 //double Y_BR = 0.2;
 
 double stroke[4 + 1][2] = { // left, right
-	{ 0.18, 0.20 }, 
-	{ 0.18, 0.215 }, 
-	{ 0.18, 0.18 }, 
+	{ 0.2, 0.2 },//{ 0.18, 0.20 }, 
+	{ 0.16, 0.23 }, 
+	{ 0.2, 0.2 }, 
 	{ 0.24, 0.10 }, 
 	{ 0.18, 0.18 }
 };
 
 double x_height[4 + 1][2] = { // front, back
-	{ 0.38, 0.38 },//{ 0.33, 0.33 },
-	{ 0.38, 0.38 },//{ 0.33, 0.33 },
-	{ 0.38, 0.38 },//{ 0.33, 0.33 },
-	{ 0.38, 0.38 },//{ 0.33, 0.33 },
-	{ 0.38, 0.38 }//{ 0.33, 0.33 }
+	{ 0.33, 0.33 },//{ 0.33, 0.33 },
+	{ 0.33, 0.33 },//{ 0.33, 0.33 },
+	{ 0.33, 0.33 },//{ 0.33, 0.33 },
+	{ 0.33, 0.33 },//{ 0.33, 0.33 },
+	{ 0.33, 0.33 }//{ 0.33, 0.33 }
 };
 
 double shift[4 + 1][4] = { // FL, BL, FR, BR
@@ -160,11 +165,11 @@ double shift[4 + 1][4] = { // FL, BL, FR, BR
 };
 
 double height[4 + 1][2] = { // front, back
-	{ 0.1, 0.1 },
-	{ 0.1, 0.1 },
-	{ 0.1, 0.1 },
-	{ 0.1, 0.1 },
-	{ 0.1, 0.1 }
+	{ 0.05, 0.05 },
+	{ 0.05, 0.05 },
+	{ 0.05, 0.05 },
+	{ 0.05, 0.05 },
+	{ 0.05, 0.05 }
 };
 
 double TmpStroke[4] = { stroke[0][LEFT], stroke[0][LEFT], stroke[0][RIGHT], stroke[0][RIGHT] };
@@ -206,7 +211,7 @@ double addFL = 0.0, addBL = 0.0, addFR = 0.0, addBR = 0.0;
 double incrNum = 0.0;
 
 // まっすぐから左旋回の時間， 左旋回からまっすぐに戻るまでの時間， まっすぐから右旋回までの時間， 右旋回からまっすぐの時間
-double change_timing[4] = { 8.0, 9.5, 11.0, 13.0 };//{ 5.0, 9.0, 10.0, 12.0 };//{ 5.0, 8.5, 15.0, 16.5 };//{ 5.0, 8.0, 13.5, 16.0 };//{ 4.5, 8.0, 13.5, 17.0 };//{ 4.5, 8.0, 12.5, 14.0 };//{ 4.5, 8.0, 11.0, 13.0 };//{ 4.0, 8.0, 12.5, 14.0 };//{1000.0, 1100.0, 1200.0, 1300.0};
+double change_timing[4] = { 4.0, 7.0, 550.0, 60.0 };//{ 8.0, 9.5, 11.0, 13.0 };//{ 5.0, 9.0, 10.0, 12.0 };//{ 5.0, 8.5, 15.0, 16.5 };//{ 5.0, 8.0, 13.5, 16.0 };//{ 4.5, 8.0, 13.5, 17.0 };//{ 4.5, 8.0, 12.5, 14.0 };//{ 4.5, 8.0, 11.0, 13.0 };//{ 4.0, 8.0, 12.5, 14.0 };//{1000.0, 1100.0, 1200.0, 1300.0};
 
 int count = 0; // 時間計測するために使ってるだけ
 int wait_count = 0;
@@ -220,8 +225,8 @@ int mode = 0;
 int n = 0;
 
 // FLA:FLL / BLA:BLL / FRA:FRL / BRA:BRL
-byte init_1st = B01111111;//B00000000;
-byte init_2nd = B01111111;//B00000000;
+byte init_1st = B11111111;//B00000000;
+byte init_2nd = B11111111;//B00000000;
 
 boolean a = false;
 boolean change_shift_flag = false;
@@ -277,14 +282,16 @@ void timerWarikomi_10ms() {
 	preBRAenc = BRAenc;
 	
 	// ベルトのピッチ * プーリーの歯数 * カウント / (エンコーダの分解能 * 4)
-	FLlinear = ( PITCH_HASU * FLLenc / ( 4.0 * ENC_RES ) ) + addFL;// + 0.39;
+	// 長さ = (double)Encount * 2 * PI * 半径 / (4逓倍 * 分解能);
+	FLlinear = ( -FLLenc * 2 * PI * HANKEI / ( 4.0 * ENC_RES ) ) + addFL;// + 0.39;
 	FLangle = ( -FLAenc * 2.0 * PI / 4096.0 ) * ( 1.0 / 2.0 ) + ( PI / 2 );
-	BLlinear = ( PITCH_HASU * BLLenc / ( 4.0 * ENC_RES ) ) + addBL;// + 0.39;
+	BLlinear = ( -BLLenc * 2 * PI * HANKEI / ( 4.0 * ENC_RES ) ) + addBL;// + 0.39;
 	BLangle = ( -BLAenc * 2.0 * PI / 4096.0 ) * ( 1.0 / 2.0 ) + ( PI / 2 );
-	FRlinear = ( PITCH_HASU * -FRLenc / ( 4.0 * ENC_RES ) ) + addFR;// + 0.39;
+	FRlinear = ( FRLenc * 2 * PI * HANKEI / ( 4.0 * ENC_RES ) ) + addFR;// + 0.39;
 	FRangle = -(( -FRAenc * 2.0 * PI / 4096.0 ) * ( 1.0 / 2.0 ) + ( PI / 2 ));
-	BRlinear = ( PITCH_HASU * BRLenc / ( 4.0 * ENC_RES ) ) + addBR;// + 0.39;
+	BRlinear = ( -BRLenc * 2 * PI * HANKEI / ( 4.0 * ENC_RES ) ) + addBR;// + 0.39;
 	BRangle = -(( -BRAenc * 2.0 * PI / 4096.0 ) * ( 1.0 / 2.0 ) + ( PI / 2 ));
+
 	if( !a ){
 		preFLangle = FLangle;
 		preBLangle = BLangle;
@@ -376,13 +383,13 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B01000000 ) == 0 ) && readPinFL == 0 ){
-			addFL = 0.5030 - FLlinear;
+			addFL = 0.45 - FLlinear;//0.5030 - FLlinear;
 			saber1.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B01000000;
 		}else if( ( init_1st & B01000000 ) == 64 ){
 			saber1.saberCmd(LINEAR_CMD, 0.0);
 		}else{
-			saber1.saberCmd(LINEAR_CMD, 0.1);
+			saber1.saberCmd(LINEAR_CMD, -0.1);
 		}
 		
 		if( ( init_1st & B00100000 ) == 0 ){
@@ -402,13 +409,13 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B00010000 ) == 0 ) &&  readPinBL == 0 ){
-			addBL = 0.5070 - BLlinear;
+			addBL = 0.45 - BLlinear;//0.5070 - BLlinear;
 			saber2.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B00010000;
 		}else if( ( init_1st & B00010000 ) == 16 ){
 			saber2.saberCmd(LINEAR_CMD, 0.0);
 		}else{
-			saber2.saberCmd(LINEAR_CMD, -0.1);
+			saber2.saberCmd(LINEAR_CMD, 0.1);
 		}
 		
 		if( ( init_1st & B00001000 ) == 0 ){
@@ -428,13 +435,13 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B00000100 ) == 0 ) &&  readPinFR == 0 ){
-			addFR = 0.5100 - FRlinear;
+			addFR = 0.45 - FRlinear;//0.5100 - FRlinear;
 			saber3.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B00000100;
 		}else if( ( init_1st & B00000100 ) == 4 ){
 			saber3.saberCmd(LINEAR_CMD, 0.0);
 		}else{
-			saber3.saberCmd(LINEAR_CMD, -0.1);
+			saber3.saberCmd(LINEAR_CMD, 0.1);
 		}
 		
 		if( ( init_1st & B00000010 ) == 0 ){
@@ -454,13 +461,13 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B00000001 ) == 0 ) &&  readPinBR == 0 ){
-			addBR = 0.5110 - BRlinear;
+			addBR = 0.45 - BRlinear;//0.5110 - BRlinear;
 			saber4.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B00000001;
 		}else if( ( init_1st & B00000001 ) == 1 ){
 			saber4.saberCmd(LINEAR_CMD, 0.0);
 		}else{
-			saber4.saberCmd(LINEAR_CMD, 0.1);
+			saber4.saberCmd(LINEAR_CMD, -0.1);
 		}
 		
 		if( init_1st == B11111111 ){
@@ -506,7 +513,7 @@ void timerWarikomi_10ms() {
 				init_2nd |= B01000000;
 			}
 			
-			saber1.saberCmd(LINEAR_CMD, -0.1);
+			saber1.saberCmd(LINEAR_CMD, 0.1);
 		}else{
 			saber1.saberCmd(LINEAR_CMD, 0.0);
 		}
@@ -542,7 +549,7 @@ void timerWarikomi_10ms() {
 				init_2nd |= B00010000;
 			}		
 			
-			saber2.saberCmd(LINEAR_CMD, 0.1);
+			saber2.saberCmd(LINEAR_CMD, -0.1);
 		}else{
 			saber2.saberCmd(LINEAR_CMD, 0.0);
 		}
@@ -576,7 +583,7 @@ void timerWarikomi_10ms() {
 				init_2nd |= B00000100;
 			}
 			
-			saber3.saberCmd(LINEAR_CMD, 0.1);
+			saber3.saberCmd(LINEAR_CMD, -0.1);
 		}else{
 			saber3.saberCmd(LINEAR_CMD, 0.0);
 		}
@@ -611,7 +618,7 @@ void timerWarikomi_10ms() {
 				init_2nd |= B00000001;
 			}
 			
-			saber4.saberCmd(LINEAR_CMD, -0.1);
+			saber4.saberCmd(LINEAR_CMD, 0.1);
 		}else{
 			saber4.saberCmd(LINEAR_CMD, 0.0);
 		}
@@ -629,20 +636,87 @@ void timerWarikomi_10ms() {
 		Serial.println(BRlinear, 4);
 		
 	}else if( mode == 10 ){ // 待ち
-		saber1.saberCmd(ANGLE_CMD, 0.0);
-		saber1.saberCmd(LINEAR_CMD, 0.0);
+
+		refFLangle = frontLeft.calcAngle( frontLeft.calcSayu( incrNum ), frontLeft.calcJoge( incrNum ) );
+		refFLlinear = frontLeft.calcLinear( frontLeft.calcSayu( incrNum ), frontLeft.calcJoge( incrNum ) );
+		refBLangle = BackLeft.calcAngle( BackLeft.calcSayu( incrNum ), BackLeft.calcJoge( incrNum ) );
+		refBLlinear = BackLeft.calcLinear( BackLeft.calcSayu( incrNum ), BackLeft.calcJoge( incrNum ) );
+		refFRangle = frontRight.calcAngle( frontRight.calcSayu( incrNum ), frontRight.calcJoge( incrNum ) );
+		refFRlinear = frontRight.calcLinear( frontRight.calcSayu( incrNum ), frontRight.calcJoge( incrNum ) );
+		refBRangle = BackRight.calcAngle( BackRight.calcSayu( incrNum ), BackRight.calcJoge( incrNum ) );
+		refBRlinear = BackRight.calcLinear( BackRight.calcSayu( incrNum ), BackRight.calcJoge( incrNum ) );
+
+		// 目標速度
+		refFLAsokudo = FLAichiPID.getCmd(refFLangle, FLangle, 6.0);
+		refFLLsokudo = FLLichiPID.getCmd(refFLlinear, FLlinear, 4.0);
+		refBLAsokudo = BLAichiPID.getCmd(refBLangle, BLangle, 6.0);
+		refBLLsokudo = BLLichiPID.getCmd(refBLlinear, BLlinear, 4.0);
+		refFRAsokudo = FRAichiPID.getCmd(refFRangle, FRangle, 6.0);
+		refFRLsokudo = FRLichiPID.getCmd(refFRlinear, FRlinear, 4.0);
+		refBRAsokudo = BRAichiPID.getCmd(refBRangle, BRangle, 7.0);
+		refBRLsokudo = BRLichiPID.getCmd(refBRlinear, BRlinear, 4.0);//1.0);
 		
-		//delayMicroseconds(50);
+		// sabertoothに送るコマンド
+		FLAcmd += FLAsokudoPID.getCmd(refFLAsokudo, FLAsokudo, 30.0) * ( -1.0 / 127.0 ); // 20より大きくするとcmdの値がいきなり大きく変わる
+		FLLcmd += FLLsokudoPID.getCmd(refFLLsokudo, FLLsokudo, 76.0) * ( -1.0 / 127.0 );//127.0) * ( 1.0 / 127.0 );
+		BLAcmd += BLAsokudoPID.getCmd(refBLAsokudo, BLAsokudo, 30.0) * ( -1.0 / 127.0 );
+		BLLcmd += BLLsokudoPID.getCmd(refBLLsokudo, BLLsokudo, 127.0) * ( 1.0 / 127.0 );
+		FRAcmd += FRAsokudoPID.getCmd(refFRAsokudo, FRAsokudo, 30.0) * ( 1.0 / 127.0 );
+		FRLcmd += FRLsokudoPID.getCmd(refFRLsokudo, FRLsokudo, 127.0) * ( 1.0 / 127.0 );
+		BRAcmd += BRAsokudoPID.getCmd(refBRAsokudo, BRAsokudo, 30.0) * ( 1.0 / 127.0 );
+		BRLcmd += BRLsokudoPID.getCmd(refBRLsokudo, BRLsokudo, 127.0) * ( -1.0 / 127.0 );
 		
-		saber2.saberCmd(ANGLE_CMD, 0.0);
-		saber2.saberCmd(LINEAR_CMD, 0.0);
+		// コマンドの値が大きくなり過ぎないように制限
+		if( FLAcmd < -1.0 ){
+			FLAcmd = -1.0;
+		}else if( 1.0 < FLAcmd ){
+			FLAcmd = 1.0;
+		}
+		if( FLLcmd < -1.0 ){
+			FLLcmd = -1.0;
+		}else if( 1.0 < FLLcmd ){
+			FLLcmd = 1.0;
+		}
+		if( BLAcmd < -1.0 ){
+			BLAcmd = -1.0;
+		}else if( 1.0 < BLAcmd ){
+			BLAcmd = 1.0;
+		}
+		if( BLLcmd < -1.0 ){
+			BLLcmd = -1.0;
+		}else if( 1.0 < BLLcmd ){
+			BLLcmd = 1.0;
+		}
+		if( FRAcmd < -1.0 ){
+			FRAcmd = -1.0;
+		}else if( 1.0 < FRAcmd ){
+			FRAcmd = 1.0;
+		}
+		if( FRLcmd < -1.0 ){
+			FRLcmd = -1.0;
+		}else if( 1.0 < FRLcmd ){
+			FRLcmd = 1.0;
+		}
+		if( BRAcmd < -1.0 ){
+			BRAcmd = -1.0;
+		}else if( 1.0 < BRAcmd ){
+			BRAcmd = 1.0;
+		}
+		if( BRLcmd < -1.0 ){
+			BRLcmd = -1.0;
+		}else if( 1.0 < BRLcmd ){
+			BRLcmd = 1.0;
+		}
 		
-		saber3.saberCmd(ANGLE_CMD, 0.0);
-		saber3.saberCmd(LINEAR_CMD, 0.0);
-		
-		saber4.saberCmd(ANGLE_CMD, 0.0);
-		saber4.saberCmd(LINEAR_CMD, 0.0);
-		
+		saber1.saberCmd(ANGLE_CMD, FLAcmd);
+		saber1.saberCmd(LINEAR_CMD, FLLcmd);
+		saber2.saberCmd(ANGLE_CMD, BLAcmd);
+		saber2.saberCmd(LINEAR_CMD, BLLcmd);
+		saber3.saberCmd(ANGLE_CMD, FRAcmd);
+		saber3.saberCmd(LINEAR_CMD, FRLcmd);
+		saber4.saberCmd(ANGLE_CMD, BRAcmd);
+		saber4.saberCmd(LINEAR_CMD, BRLcmd);
+
 		if( !digitalRead(PIN_START) ){
 			mode = 2;
 		}
@@ -1040,21 +1114,21 @@ void timerWarikomi_10ms() {
 		}
 		
 		refBLAsokudo = BLAichiPID.getCmd(refBLangle, BLangle, 6.0);
-		refBLLsokudo = BLLichiPID.getCmd(refBLlinear, BLlinear, 0.2);
+		refBLLsokudo = BLLichiPID.getCmd(refBLlinear, BLlinear, 4.0);
 		refFRAsokudo = FRAichiPID.getCmd(refFRangle, FRangle, 6.0);
-		refFRLsokudo = FRLichiPID.getCmd(refFRlinear, FRlinear, 0.2);
+		refFRLsokudo = FRLichiPID.getCmd(refFRlinear, FRlinear, 4.0);
 		refBRAsokudo = BRAichiPID.getCmd(refBRangle, BRangle, 7.0);
-		refBRLsokudo = BRLichiPID.getCmd(refBRlinear, BRlinear, 0.2);//1.0);
+		refBRLsokudo = BRLichiPID.getCmd(refBRlinear, BRlinear, 4.0);//1.0);
 		
 		// sabertoothに送るコマンド
 		FLAcmd += FLAsokudoPID.getCmd(refFLAsokudo, FLAsokudo, 30.0) * ( -1.0 / 127.0 ); // 20より大きくするとcmdの値がいきなり大きく変わる
-		FLLcmd += FLLsokudoPID.getCmd(refFLLsokudo, FLLsokudo, 76.0) * ( 1.0 / 127.0 );//127.0) * ( 1.0 / 127.0 );
+		FLLcmd += FLLsokudoPID.getCmd(refFLLsokudo, FLLsokudo, 76.0) * ( -1.0 / 127.0 );//127.0) * ( 1.0 / 127.0 );
 		BLAcmd += BLAsokudoPID.getCmd(refBLAsokudo, BLAsokudo, 30.0) * ( -1.0 / 127.0 );
-		BLLcmd += BLLsokudoPID.getCmd(refBLLsokudo, BLLsokudo, 127.0) * ( -1.0 / 127.0 );
+		BLLcmd += BLLsokudoPID.getCmd(refBLLsokudo, BLLsokudo, 127.0) * ( 1.0 / 127.0 );
 		FRAcmd += FRAsokudoPID.getCmd(refFRAsokudo, FRAsokudo, 30.0) * ( 1.0 / 127.0 );
-		FRLcmd += FRLsokudoPID.getCmd(refFRLsokudo, FRLsokudo, 127.0) * ( -1.0 / 127.0 );
+		FRLcmd += FRLsokudoPID.getCmd(refFRLsokudo, FRLsokudo, 127.0) * ( 1.0 / 127.0 );
 		BRAcmd += BRAsokudoPID.getCmd(refBRAsokudo, BRAsokudo, 30.0) * ( 1.0 / 127.0 );
-		BRLcmd += BRLsokudoPID.getCmd(refBRLsokudo, BRLsokudo, 127.0) * ( 1.0 / 127.0 );
+		BRLcmd += BRLsokudoPID.getCmd(refBRLsokudo, BRLsokudo, 127.0) * ( -1.0 / 127.0 );
 		
 		// コマンドの値が大きくなり過ぎないように制限
 		if( FLAcmd < -1.0 ){
@@ -1104,7 +1178,7 @@ void timerWarikomi_10ms() {
 		}
 		
 		// 動かす
-		saber1.saberCmd(ANGLE_CMD, FLAcmd);
+		
 		/* if( FLLcmd != 0.0 ){
 			FLLcmd += refFLLsokudo * 0.05;
 		} */
@@ -1174,26 +1248,38 @@ void timerWarikomi_10ms() {
 				}
 			}
 		} */
+		saber1.saberCmd(ANGLE_CMD, FLAcmd);
+		saber1.saberCmd(LINEAR_CMD, FLLcmd);
+		saber2.saberCmd(ANGLE_CMD, BLAcmd);
+		saber2.saberCmd(LINEAR_CMD, BLLcmd);
+		saber3.saberCmd(ANGLE_CMD, FRAcmd);
+		saber3.saberCmd(LINEAR_CMD, FRLcmd);
+		saber4.saberCmd(ANGLE_CMD, BRAcmd);
+		saber4.saberCmd(LINEAR_CMD, BRLcmd);
 		
-		saber1.saberCmd(LINEAR_CMD, 0.0);//FLLcmd);
-		saber2.saberCmd(ANGLE_CMD, 0.0);//BLAcmd);
-		saber2.saberCmd(LINEAR_CMD, 0.0);//BLLcmd);
-		saber3.saberCmd(ANGLE_CMD, 0.0);//FRAcmd);
-		saber3.saberCmd(LINEAR_CMD, 0.0);//FRLcmd);
-		saber4.saberCmd(ANGLE_CMD, 0.0);//BRAcmd);
-		saber4.saberCmd(LINEAR_CMD, 0.0);//BRLcmd);
-		
-		Serial.print(step_count);
+		Serial.print(incrNum, 4);
 		Serial.print("\t");
-		Serial.print(refFLangle, 4);//(refFLlinear, 4);
+		Serial.print(refFRangle, 4);//(refFLlinear, 4);
 		Serial.print("\t");
-		Serial.print(FLangle, 4);//(FLlinear, 4);
+		Serial.print(FRangle, 4);//(FLlinear, 4);
 		Serial.print("\t");
-		Serial.print(FLLcmd);
+		Serial.print(FRLcmd);
 		Serial.print("\t");
-		Serial.print(refFLAsokudo, 4);//(refFLLsokudo, 4);//
+		Serial.print(refFRAsokudo, 4);//(refFLLsokudo, 4);//
 		Serial.print("\t");
-		Serial.println(FLAsokudo, 4);//(FLLsokudo, 4);//
+		Serial.println(FRAsokudo, 4);//(FLLsokudo, 4);//
+
+		/* Serial.print(step_count);
+		Serial.print("\t");
+		Serial.print(refFRlinear, 4);
+		Serial.print("\t");
+		Serial.print(FRlinear, 4);
+		Serial.print("\t");
+		Serial.print(FRLcmd);
+		Serial.print("\t");
+		Serial.print(refFRLsokudo, 4);//
+		Serial.print("\t");
+		Serial.println(FRLsokudo, 4);// */
 		
 	}
 }
@@ -1237,10 +1323,10 @@ void setup() {
 	Serial.begin(115200);
 	
 	SWSerial1.begin(115200);
-	ST1.autobaud();
-	ST2.autobaud();
-	ST3.autobaud();
-	ST4.autobaud();
+	//ST1.autobaud();
+	//ST2.autobaud();
+	//ST3.autobaud();
+	//ST4.autobaud();
 	
 	FLLichiPID.PIDinit(0.0, 0.0);
 	FLAichiPID.PIDinit(0.0, 0.0);
