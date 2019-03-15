@@ -52,6 +52,8 @@
 #define STATE_INIT_2ND	(1)
 
 // height_changeTimingで使用
+#define CHANGE_HEIGHT	(0.1)
+#define CHANGE_HEIGHT_SHORT	(0.09)
 #define MAE		(0)
 #define ATO		(1)
 
@@ -127,8 +129,8 @@ mySaberClass saber4(&ST4);
 /*****************************************
 	宣言
 *****************************************/
-double kataSokudo = 0.18;//0.25;//0.2;//2;
-double kata_sokudo[4 + 1] = { 0.15, 0.15, 0.15, 0.15, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
+double kataSokudo = 0.165;//0.25;//0.2;//2;
+double kata_sokudo[4 + 1] = { 0.165, 0.15, 0.06, 0.06, 0.15 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
 //double kataSokudo = 0.125;//constNum = 0.005
 //double kataSokudo = 0.1;//constNum = 0.004
 
@@ -142,35 +144,54 @@ double kata_sokudo[4 + 1] = { 0.15, 0.15, 0.15, 0.15, 0.15 };//{ 0.2, 0.2, 0.2, 
 
 double stroke[4 + 1][2] = { // left, right
 	{ 0.2, 0.2 },//{ 0.18, 0.20 }, 
-	{ 0.16, 0.23 }, 
-	{ 0.2, 0.2 }, 
-	{ 0.24, 0.10 }, 
+	{ 0.16, 0.23 },//{ 0.16, 0.16 },//{ 0.16, 0.23 }, 
+	{ 0.08, 0.08 },//{ 0.13, 0.13 }, 
+	{ 0.14, 0.14 }, 
 	{ 0.18, 0.18 }
 };
 
-double x_height[4 + 1][2] = { // front, back
-	{ 0.33, 0.33 },//{ 0.33, 0.33 },
-	{ 0.33, 0.33 },//{ 0.33, 0.33 },
-	{ 0.33, 0.33 },//{ 0.33, 0.33 },
-	{ 0.33, 0.33 },//{ 0.33, 0.33 },
-	{ 0.33, 0.33 }//{ 0.33, 0.33 }
-};
+double x_height[4] = { 0.32, 0.32, 0.32, 0.32 };//{ 0.33, 0.33, 0.33, 0.33 };//{ 0.34, 0.34, 0.34, 0.34 };// FL, BL, FR, BR
+
+/* double x_height[4 + 1][4] = { // FL, BL, FR, BR
+	{ 0.33, 0.33, 0.33, 0.33 },//{ 0.33, 0.33 },
+	{ 0.33, 0.33, 0.33, 0.33 },//{ 0.33, 0.33 },
+	{ 0.33, 0.33, 0.33, 0.33 },//{ 0.33, 0.33 },
+	{ 0.33, 0.33, 0.33, 0.33 },//{ 0.33, 0.33 },
+	{ 0.33, 0.33, 0.33, 0.33 }//{ 0.33, 0.33 }
+}; */
+
+double ex_height = 0.0;
+
+double FLheight_changeTiming[2] = { 11.0, 12.0 };//{ 10.0, 11.0 };//{ 9.0, 10.0 };//{ 1.0, 2.0 };//	// change前, change後
+
+double BLheight_changeTiming[2] = { 12.5, 14.5 };//{ 11.5, 13.5 };//{ 10.5, 11.5 };//{ 2.5, 3.5 };// // change前, change後
+
+double FRheight_changeTiming[2] = { 10.5, 12.5 };//{ 9.5, 11.5 };//{ 8.5, 10.5 };//{ 1.5, 2.5 };// // change前, change後
+
+double BRheight_changeTiming[2] = { 13.0, 14.0 };//{ 12.0, 13.0 };//{ 10.0, 12.0 };//{ 2.0, 3.0 };// // change前, change後
 
 double shift[4 + 1][4] = { // FL, BL, FR, BR
-	{ 0.01, 0.04, 0.015, 0.04 },//{ 0.01, 0.04, 0.01, 0.04 }, 
-	{ 0.01, 0.04, 0.015, 0.04 },//{ 0.01, 0.04, 0.01, 0.04 }, 
-	{ 0.01, 0.04, 0.01, 0.04 },//{ 0.01, 0.04, 0.01, 0.04 },
-	{ 0.01, 0.04, 0.01, 0.04 },//{ 0.01, 0.04, 0.01, 0.04 },
+	{ 0.0, 0.04, 0.0, 0.04 },//{ 0.01, 0.04, 0.015, 0.04 },// 
+	{ 0.0, 0.04, 0.0, 0.04 },//{ 0.01, 0.04, 0.015, 0.04 },// 
+	{ -0.02, 0.02, -0.02, 0.02 },//{ 0.01, 0.04, 0.01, 0.04 },
+	{ 0.0, 0.02, 0.0, 0.02 },//{ 0.01, 0.01, 0.01, 0.01 },
 	{ 0.01, 0.04, 0.01, 0.04 },//{ 0.01, 0.04, 0.01, 0.04 }
+	/* { 0.01, 0.04, 0.015, 0.04 },//{ 0.01, 0.04, 0.015, 0.04 },// 
+	{ 0.01, 0.03, 0.014, 0.03 },//{ 0.01, 0.04, 0.015, 0.04 },// 
+	{ 0.01, 0.02, 0.013, 0.02 },//{ 0.01, 0.04, 0.01, 0.04 },
+	{ 0.01, 0.01, 0.012, 0.01 },//{ 0.01, 0.04, 0.01, 0.04 },
+	{ 0.01, 0.04, 0.01, 0.04 },//{ 0.01, 0.04, 0.01, 0.04 } */
 };
 
-double height[4 + 1][2] = { // front, back
-	{ 0.05, 0.05 },
+double height[2] = { 0.03, 0.03 };// front, back
+
+/* double height[4 + 1][2] = { // front, back
+	{ 0.1, 0.1 },
 	{ 0.05, 0.05 },
 	{ 0.05, 0.05 },
 	{ 0.05, 0.05 },
 	{ 0.05, 0.05 }
-};
+}; */
 
 double TmpStroke[4] = { stroke[0][LEFT], stroke[0][LEFT], stroke[0][RIGHT], stroke[0][RIGHT] };
 double TmpShift[4] = { shift[0][FL], shift[0][BL], shift[0][FR], shift[0][BR] };
@@ -211,7 +232,7 @@ double addFL = 0.0, addBL = 0.0, addFR = 0.0, addBR = 0.0;
 double incrNum = 0.0;
 
 // まっすぐから左旋回の時間， 左旋回からまっすぐに戻るまでの時間， まっすぐから右旋回までの時間， 右旋回からまっすぐの時間
-double change_timing[4] = { 4.0, 7.0, 550.0, 60.0 };//{ 8.0, 9.5, 11.0, 13.0 };//{ 5.0, 9.0, 10.0, 12.0 };//{ 5.0, 8.5, 15.0, 16.5 };//{ 5.0, 8.0, 13.5, 16.0 };//{ 4.5, 8.0, 13.5, 17.0 };//{ 4.5, 8.0, 12.5, 14.0 };//{ 4.5, 8.0, 11.0, 13.0 };//{ 4.0, 8.0, 12.5, 14.0 };//{1000.0, 1100.0, 1200.0, 1300.0};
+double change_timing[4] = { 4.5, 7.0, 9.0, 60.0 };//{ 7.0, 40.0, 50.0, 60.0 };//{ 6.5, 40.0, 50.0, 60.0 };//{ 4.5, 6.0, 7.5, 60.0 };//{ 4.0, 7.0, 550.0, 60.0 };//{ 20.0, 30.0, 40.0, 50.0 };//{ 8.0, 9.5, 11.0, 13.0 };//{ 5.0, 9.0, 10.0, 12.0 };//{ 5.0, 8.5, 15.0, 16.5 };//{ 5.0, 8.0, 13.5, 16.0 };//{ 4.5, 8.0, 13.5, 17.0 };//{ 4.5, 8.0, 12.5, 14.0 };//{ 4.5, 8.0, 11.0, 13.0 };//{ 4.0, 8.0, 12.5, 14.0 };//{1000.0, 1100.0, 1200.0, 1300.0};
 
 int count = 0; // 時間計測するために使ってるだけ
 int wait_count = 0;
@@ -224,9 +245,11 @@ int mode = 0;
 
 int n = 0;
 
+int height_count = 0;
+
 // FLA:FLL / BLA:BLL / FRA:FRL / BRA:BRL
-byte init_1st = B11111111;//B00000000;
-byte init_2nd = B11111111;//B00000000;
+byte init_1st = B00000000;//B11111111;//
+byte init_2nd = B00000000;//B11111111;//
 
 boolean a = false;
 boolean change_shift_flag = false;
@@ -239,6 +262,11 @@ boolean changeStroke_flag_BR = false;
 
 boolean halfStep = false;
 boolean pre_halfStep = halfStep;
+
+boolean FLheighet_flag = false;
+boolean BLheighet_flag = false;
+boolean FRheighet_flag = false;
+boolean BRheighet_flag = false;
 
 void timerWarikomi_10ms() {
 	if(ledcount >= 25) {
@@ -409,7 +437,7 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B00010000 ) == 0 ) &&  readPinBL == 0 ){
-			addBL = 0.45 - BLlinear;//0.5070 - BLlinear;
+			addBL = 0.45 - BLlinear;//0.44 - BLlinear;//0.5070 - BLlinear;
 			saber2.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B00010000;
 		}else if( ( init_1st & B00010000 ) == 16 ){
@@ -435,7 +463,7 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B00000100 ) == 0 ) &&  readPinFR == 0 ){
-			addFR = 0.45 - FRlinear;//0.5100 - FRlinear;
+			addFR = 0.45 - FRlinear;//0.44 - FRlinear;//0.5100 - FRlinear;
 			saber3.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B00000100;
 		}else if( ( init_1st & B00000100 ) == 4 ){
@@ -461,7 +489,7 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B00000001 ) == 0 ) &&  readPinBR == 0 ){
-			addBR = 0.45 - BRlinear;//0.5110 - BRlinear;
+			addBR = 0.45 - BRlinear;//0.47 - BRlinear;//0.5110 - BRlinear;
 			saber4.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B00000001;
 		}else if( ( init_1st & B00000001 ) == 1 ){
@@ -733,6 +761,156 @@ void timerWarikomi_10ms() {
 			step_count += 0.5;
 			incrNum -= 1.0;
 			halfStep = !halfStep;
+		}
+
+		if(step_count == 8.0){
+			digitalWrite(PIN_LED2, HIGH);
+		}
+
+		// 前
+		if( FLheight_changeTiming[MAE] == step_count ){
+			digitalWrite(PIN_LED3, HIGH);
+			if( height_count == 50 ){
+				digitalWrite(PIN_LED3, LOW);
+			}
+			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+			x_height[ FL ] -= ex_height;
+			if( !FLheighet_flag ){
+				height[ FL ] += 0.05;
+				FLheighet_flag = true;
+			}
+			
+			frontLeft.changeJoge( x_height[ FL ] );
+			frontLeft.changeLegHeight( height[ FL ] );
+			height_count++;
+		}else if( ( FLheight_changeTiming[MAE] + 0.5 ) == step_count ){
+			if( FLheighet_flag ){
+				height[ FL ] -= 0.05;
+				FLheighet_flag = false;
+			}
+			frontLeft.changeLegHeight( height[ FL ] );
+		}
+
+		if( BLheight_changeTiming[MAE] == step_count ){
+			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+			x_height[ BL ] -= ex_height;
+			if( !BLheighet_flag ){
+				height[ BL ] += 0.05;
+				BLheighet_flag = true;
+			}
+			BackLeft.changeJoge( x_height[ BL ] );
+			BackLeft.changeLegHeight( height[ BL ] );
+		}else if( ( BLheight_changeTiming[MAE] + 0.5 ) == step_count ){
+			if( BLheighet_flag ){
+				height[ BL ] -= 0.05;
+				BLheighet_flag = false;
+			}
+			BackLeft.changeLegHeight( height[ BL ] );
+		}
+
+		if( FRheight_changeTiming[MAE] == step_count ){
+			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+			x_height[ FR ] -= ex_height;
+			if( !FRheighet_flag ){
+				height[ FR ] += 0.05;
+				FRheighet_flag = true;
+			}
+			frontRight.changeJoge( x_height[ FR ] );
+			frontRight.changeLegHeight( height[ FR ] );
+		}else if( ( FRheight_changeTiming[MAE] + 0.5 ) == step_count ){
+			if( FRheighet_flag ){
+				height[ FR ] -= 0.05;
+				FRheighet_flag = false;
+			}
+			frontRight.changeLegHeight( height[ FR ] );
+		}
+
+		if( BRheight_changeTiming[MAE] == step_count ){
+			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+			x_height[ BR ] -= ex_height;
+			if( !BRheighet_flag ){
+				height[ BR ] += 0.05;
+				BRheighet_flag = true;
+			}
+			BackRight.changeJoge(x_height[ BR ]);
+			BackRight.changeLegHeight( height[ BR ] );
+		}else if( ( BRheight_changeTiming[MAE] + 0.5 ) == step_count ){
+			if( !BRheighet_flag ){
+				height[ BR ] -= 0.05;
+				BRheighet_flag = false;
+			}
+			BackRight.changeLegHeight( height[ BR ] );
+		}
+
+
+		// 後
+		if( FLheight_changeTiming[ATO] == step_count ){
+			ex_height = CHANGE_HEIGHT_SHORT / ( 0.5 / constNum );
+			x_height[ FL ] += ex_height;
+			frontLeft.changeJoge(x_height[ FL ]);
+			if( !FLheighet_flag ){
+				height[ FL ] += 0.05;
+				FLheighet_flag = true;
+			}
+			frontLeft.changeJoge( x_height[ FL ] );
+			frontLeft.changeLegHeight( height[ FL ] );
+		}else if( ( FLheight_changeTiming[ATO] + 0.5 ) == step_count ){
+			if( FLheighet_flag ){
+				height[ FL ] -= 0.05;
+				FLheighet_flag = false;
+			}
+			frontLeft.changeLegHeight( height[ FL ] );
+		}
+
+		if( BLheight_changeTiming[ATO] == step_count ){
+			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+			x_height[ BL ] += ex_height;
+			if( !BLheighet_flag ){
+				height[ BL ] += 0.05;
+				BLheighet_flag = true;
+			}
+			BackLeft.changeJoge( x_height[ BL ] );
+			BackLeft.changeLegHeight( height[ BL ] );
+		}else if( ( BLheight_changeTiming[ATO] + 0.5 ) == step_count ){
+			if( BLheighet_flag ){
+				height[ BL ] -= 0.05;
+				BLheighet_flag = false;
+			}
+			BackLeft.changeLegHeight( height[ BL ] );
+		}
+
+		if( FRheight_changeTiming[ATO] == step_count ){
+			ex_height = CHANGE_HEIGHT_SHORT / ( 0.5 / constNum );
+			x_height[ FR ] += ex_height;
+			if( !FRheighet_flag ){
+				//height[ FR ] += 0.05;
+				FRheighet_flag = true;
+			}
+			frontRight.changeJoge(x_height[ FR ]);
+			frontRight.changeLegHeight( height[ FR ] );
+		}else if( ( FRheight_changeTiming[ATO] + 0.5 ) == step_count ){
+			if( FRheighet_flag ){
+				//height[ FR ] -= 0.05;
+				FRheighet_flag = false;
+			}
+			frontRight.changeLegHeight( height[ FR ] );
+		}
+
+		if( BRheight_changeTiming[ATO] == step_count ){
+			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+			x_height[ BR ] += ex_height;
+			if( !BRheighet_flag ){
+				height[ BR ] += 0.05;
+				BRheighet_flag = true;
+			}
+			BackRight.changeJoge(x_height[ BR ]);
+			BackRight.changeLegHeight( height[ BR ] );
+		}else if( ( BRheight_changeTiming[ATO] + 0.5 ) == step_count ){
+			if( BRheighet_flag ){
+				height[ BR ] -= 0.05;
+				BRheighet_flag = false;
+			}
+			BackRight.changeLegHeight( height[ BR ] );
 		}
 
 		if (pre_halfStep != halfStep) {
@@ -1257,7 +1435,7 @@ void timerWarikomi_10ms() {
 		saber4.saberCmd(ANGLE_CMD, BRAcmd);
 		saber4.saberCmd(LINEAR_CMD, BRLcmd);
 		
-		Serial.print(incrNum, 4);
+		/* Serial.print(incrNum, 4);
 		Serial.print("\t");
 		Serial.print(refFRangle, 4);//(refFLlinear, 4);
 		Serial.print("\t");
@@ -1267,7 +1445,7 @@ void timerWarikomi_10ms() {
 		Serial.print("\t");
 		Serial.print(refFRAsokudo, 4);//(refFLLsokudo, 4);//
 		Serial.print("\t");
-		Serial.println(FRAsokudo, 4);//(FLLsokudo, 4);//
+		Serial.println(FRAsokudo, 4);//(FLLsokudo, 4);// */
 
 		/* Serial.print(step_count);
 		Serial.print("\t");
@@ -1281,6 +1459,16 @@ void timerWarikomi_10ms() {
 		Serial.print("\t");
 		Serial.println(FRLsokudo, 4);// */
 		
+
+		Serial.print(step_count);
+		Serial.print("\t");
+		Serial.print(frontLeft.calcSayu( incrNum ), 4);//(refFLlinear, 4);
+		Serial.print("\t");
+		Serial.print(FLlinear, 4);
+		Serial.print("\t");
+		Serial.print(frontLeft.calcJoge( incrNum ), 4);//(refFLangle, 4);
+		Serial.print("\t");
+		Serial.println(kataSokudo, 4);
 	}
 }
 
@@ -1345,13 +1533,13 @@ void setup() {
 	BRLsokudoPID.PIDinit(0.0, 0.0);
 	BRAsokudoPID.PIDinit(0.0, 0.0);
 	frontLeft.setSayu(INT_TIME, PAIR1, constNum, stroke[0][LEFT], kataSokudo_FL, shift[0][FL]);
-	frontLeft.setJoge(INT_TIME, PAIR1, constNum, x_height[0][FRONT], stroke[0][LEFT], kataSokudo_FL, height[0][FRONT]);
+	frontLeft.setJoge(INT_TIME, PAIR1, constNum, x_height[FL], stroke[0][LEFT], kataSokudo_FL, height[FRONT]);
 	BackLeft.setSayu(INT_TIME, PAIR2, constNum, stroke[0][LEFT], kataSokudo_BL, shift[0][BL]);
-	BackLeft.setJoge(INT_TIME, PAIR2, constNum, x_height[0][BACK], stroke[0][LEFT], kataSokudo_BL, height[0][BACK]);
+	BackLeft.setJoge(INT_TIME, PAIR2, constNum, x_height[BL], stroke[0][LEFT], kataSokudo_BL, height[BACK]);
 	frontRight.setSayu(INT_TIME, PAIR2, constNum, stroke[0][RIGHT], kataSokudo_FR, shift[0][FR]);
-	frontRight.setJoge(INT_TIME, PAIR2, constNum, x_height[0][FRONT], stroke[0][RIGHT], kataSokudo_FR, height[0][FRONT]);
+	frontRight.setJoge(INT_TIME, PAIR2, constNum, x_height[FR], stroke[0][RIGHT], kataSokudo_FR, height[FRONT]);
 	BackRight.setSayu(INT_TIME, PAIR1, constNum, stroke[0][RIGHT], kataSokudo_BR, shift[0][BR]);
-	BackRight.setJoge(INT_TIME, PAIR1, constNum, x_height[0][BACK], stroke[0][RIGHT], kataSokudo_BR, height[0][BACK]);
+	BackRight.setJoge(INT_TIME, PAIR1, constNum, x_height[BR], stroke[0][RIGHT], kataSokudo_BR, height[BACK]);
 	
 	MsTimerTPU3::set((int)(INT_TIME * 1000), timerWarikomi_10ms); // 10ms period
 	MsTimerTPU3::start();
