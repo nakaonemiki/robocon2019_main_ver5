@@ -20,6 +20,8 @@
 #include "Sabertooth.h"
 #include "phaseCounter.h"
 #include "reboot.h"
+#include "VL53L0X.h"
+#include "Wire.h"
 
 /*****************************************
 	define
@@ -41,11 +43,11 @@
 #define PIN_51	(25)
 #define PIN_13	(31)
 #define PIN_12	(30)
-#define PIN_FLSW	(A2)
-#define PIN_BLSW	(27)
-#define PIN_FRSW	(A5)
-#define PIN_BRSW	(A4)
-#define PIN_START	(28)
+#define PIN_FLSW	(46)//(A2)//
+#define PIN_BLSW	(28)//(27)//
+#define PIN_FRSW	(27)//(A5)//
+#define PIN_BRSW	(47)//(A4)//
+#define PIN_START	(29)//(28)//
 
 // mode
 #define STATE_INIT_1ST	(0)
@@ -71,9 +73,13 @@
 #define FR		(2)
 #define BR		(3)
 
-//-----------------------------------------
-//#define MAX_VEL	(1.0)
-//-----------------------------------------
+//----------------------------------------
+//	距離センサ
+//----------------------------------------
+
+#define SENSOR_NUM  2 // 使用するセンサーの数
+#define ADDRESS_DEFALUT 0b0101001 // 0x29
+#define ADDRESS_00 (ADDRESS_DEFALUT + 2)
 
 /*****************************************
 	class
@@ -114,7 +120,6 @@ PID BRAichiPID(15.0, 0.0, 0.0, INT_TIME);
 PID BRLsokudoPID(30.0, 0.0, 60.0, INT_TIME);
 PID BRAsokudoPID(2.5, 0.0, 4.0, INT_TIME);
 
-//SoftwareSerial SWSerial2(7, 6); // rx, tx
 SoftwareSerial SWSerial1(26, 24);// rx, tx
 Sabertooth ST1(129, SWSerial1);//FL
 Sabertooth ST2(130, SWSerial1);//BL
@@ -129,25 +134,15 @@ mySaberClass saber4(&ST4);
 /*****************************************
 	宣言
 *****************************************/
-double kataSokudo = 0.15;//0.25;//0.2;//2;
-double kata_sokudo[4 + 1] = { 0.15, 0.15, 0.15, 0.15, 0.15 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
-//double kataSokudo = 0.125;//constNum = 0.005
-//double kataSokudo = 0.1;//constNum = 0.004
-
-
-//double Y_left = 0.24;//0.18;//0.2;//0.25;//0.2;
-//double Y_right = 0.24;//0.25;//0.2;
-//double Y_FL = 0.2;
-//double Y_BL = 0.2;
-//double Y_FR = 0.2;
-//double Y_BR = 0.2;
+double kataSokudo = 0.16;//0.25;//0.2;//2;
+double kata_sokudo[4 + 1] = { 0.16, 0.16, 0.15, 0.15, 0.15 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
 
 double stroke[4 + 1][2] = { // left, right
-	{ 0.2, 0.2 },//{ 0.18, 0.20 }, 
-	{ 0.0, 0.2 },//{ 0.16, 0.16 },//{ 0.16, 0.23 }, 
-	{ 0.2, 0.2 },//{ 0.13, 0.13 }, 
-	{ 0.2, 0.0 }, 
-	{ 0.18, 0.18 }
+	{ 0.17, 0.17 },//{ 0.18, 0.20 }, 
+	{ 0.17, 0.17 },//{ 0.16, 0.16 },//{ 0.16, 0.23 }, 
+	{ 0.17, 0.17 },//{ 0.13, 0.13 }, 
+	{ 0.2, 0.2 }, 
+	{ 0.2, 0.2 }
 };
 
 double x_height[4] = { 0.32, 0.32, 0.32, 0.32 };//{ 0.33, 0.33, 0.33, 0.33 };//{ 0.34, 0.34, 0.34, 0.34 };// FL, BL, FR, BR
@@ -162,23 +157,23 @@ double x_height[4] = { 0.32, 0.32, 0.32, 0.32 };//{ 0.33, 0.33, 0.33, 0.33 };//{
 
 double ex_height = 0.0;
 
-double FLheight_changeTiming[2] = { 20.0, 30.0 };	// change前, change後
+double FLheight_changeTiming[2] = { 30.0, 40.0 };	// change前, change後
 
-double BLheight_changeTiming[2] = { 20.0, 30.0 };	// change前, change後
+double BLheight_changeTiming[2] = { 30.0, 40.0 };	// change前, change後
 
-double FRheight_changeTiming[2] = { 20.0, 30.0 };	// change前, change後
+double FRheight_changeTiming[2] = { 30.0, 40.0 };	// change前, change後
 
-double BRheight_changeTiming[2] = { 20.0, 30.0 };	// change前, change後
+double BRheight_changeTiming[2] = { 30.0, 40.0 };	// change前, change後
 
 double shift[4 + 1][4] = { // FL, BL, FR, BR
-	{ 0.01, 0.04, 0.01, 0.04 },
-	{ 0.0, 0.0, 0.01, 0.04 },
-	{ 0.01, 0.04, 0.01, 0.04 },
-	{ 0.01, 0.04, 0.0, 0.0 },
-	{ 0.01, 0.04, 0.01, 0.04 }
+	{0.00, 0.03, 0.00, 0.03},
+	{0.00, 0.03, 0.00, 0.03},
+	{0.00, 0.03, 0.00, 0.03},
+	{0.00, 0.03, 0.00, 0.03},
+	{0.00, 0.03, 0.00, 0.03}
 };
 
-double height[2] = { 0.03, 0.03 };// front, back
+double height[2] = { 0.06, 0.06 };// front, back
 
 /* double height[4 + 1][2] = { // front, back
 	{ 0.1, 0.1 },
@@ -197,8 +192,6 @@ double kataSokudo_FR = 2.0 * kataSokudo * stroke[0][RIGHT] / ( stroke[0][LEFT] +
 double kataSokudo_BR = 2.0 * kataSokudo * stroke[0][RIGHT] / ( stroke[0][LEFT] + stroke[0][RIGHT] );
 
 #define X_BACK_CONST	(0.4)
-// double X_front = 0.37;//0.4;
-// double X_back = 0.37;//0.4;
 
 double constNum = 2.0 * kataSokudo * INT_TIME / ( stroke[0][RIGHT] + stroke[0][LEFT] );
 
@@ -227,7 +220,7 @@ double addFL = 0.0, addBL = 0.0, addFR = 0.0, addBR = 0.0;
 double incrNum = 0.0;
 
 // まっすぐから左旋回の時間， 左旋回からまっすぐに戻るまでの時間， まっすぐから右旋回までの時間， 右旋回からまっすぐの時間
-double change_timing[4] = { 2.0, 40.0, 50.0, 60.0 };//{ 7.0, 40.0, 50.0, 60.0 };//{ 6.5, 40.0, 50.0, 60.0 };//{ 4.5, 6.0, 7.5, 60.0 };//{ 4.0, 7.0, 550.0, 60.0 };//{ 20.0, 30.0, 40.0, 50.0 };//{ 8.0, 9.5, 11.0, 13.0 };//{ 5.0, 9.0, 10.0, 12.0 };//{ 5.0, 8.5, 15.0, 16.5 };//{ 5.0, 8.0, 13.5, 16.0 };//{ 4.5, 8.0, 13.5, 17.0 };//{ 4.5, 8.0, 12.5, 14.0 };//{ 4.5, 8.0, 11.0, 13.0 };//{ 4.0, 8.0, 12.5, 14.0 };//{1000.0, 1100.0, 1200.0, 1300.0};
+double change_timing[4] = {100.0, 200.0, 300.0, 400.0};//{5.0, 2.0, 3.0, 4.0};//{1.0, 2.0, 3.0, 4.0};
 
 int count = 0; // 時間計測するために使ってるだけ
 int wait_count = 0;
@@ -241,6 +234,17 @@ int mode = 0;
 int n = 0;
 
 int height_count = 0;
+
+int kari = 0;
+
+// 距離センサ
+const int VL53L0X_GPIO[SENSOR_NUM] = {A2, A3};
+VL53L0X gSensor[SENSOR_NUM]; // 使用するセンサークラス配列
+double sensVal_left[4] = { 0.0, 0.0, 0.0, 0.0};
+double sensVal_right[4] = { 0.0, 0.0, 0.0, 0.0};
+unsigned char sensVal_count = 0;
+unsigned char sensVal_leftCount = 0;
+unsigned char sensVal_rightCount = 0;
 
 // FLA:FLL / BLA:BLL / FRA:FRL / BRA:BRL
 byte init_1st = B00000000;//B11111111;//
@@ -370,18 +374,6 @@ void timerWarikomi_10ms() {
 	preFRangle = FRangle;
 	preBRangle = BRangle;
 	//-----------------------------------------------------------------
-	
-	/* Serial.print(FLAenc);
-	Serial.print("\t");
-	Serial.print(FLlinear, 4);
-	Serial.print("\t");
-	Serial.print(FLangle, 4);
-	Serial.print("\t");
-	Serial.print(BLAenc);
-	Serial.print("\t");
-	Serial.print(BLlinear, 4);
-	Serial.print("\t");
-	Serial.println(BLangle, 4); */
 	
 	if( mode == STATE_INIT_1ST ){
 		int readPinFL = digitalRead(PIN_FLSW);
@@ -752,22 +744,57 @@ void timerWarikomi_10ms() {
 		if ( !halfStep && incrNum >= 0.5 ) {
 			step_count += 0.5;
 			halfStep = !halfStep;
+			
+			/* sensVal_left[ 3 ] = gSensor[0].readRangeSingleMillimeters() * 0.001;
+			sensVal_right[ 3 ] = gSensor[1].readRangeSingleMillimeters() * 0.001;
+			for( int mk = 0; mk < 4; mk++ ){
+				if( sensVal_left[ mk ] < 2.0 ){
+					sensVal_leftStroke += sensVal_left[ mk ];
+					sensVal_leftCount++;
+				}
+				if( sensVal_right[ mk ] < 2.0 ){
+					sensVal_rightStroke += sensVal_right[ mk ];
+					sensVal_rightCount++;
+				}
+			}
+			sensVal_leftStroke = sensVal_leftStroke / (double)( sensVal_leftCount + 1 );
+			sensVal_rightStroke = sensVal_rightStroke / (double)( sensVal_rightCount + 1 );
+			sensVal_leftCount = 0;
+			sensVal_rightCount = 0; */
 		}else if ( halfStep && incrNum >= 1.0 ) {
 			step_count += 0.5;
 			incrNum -= 1.0;
 			halfStep = !halfStep;
 		}
 
-		if(step_count == 8.0){
-			digitalWrite(PIN_LED2, HIGH);
-		}
+		/* if( step_count == change_timing[ 0 ] || step_count == change_timing[ 1 ] || step_count == change_timing[ 2 ] || step_count == change_timing[ 3 ] ){
+			if( sensVal_leftStroke <= 0.2 + SAKYU_KYORI ){
+				// sensValで返ってきた値分strokeにする(+αする必要あり?)
+				stroke[(int)step_count][LEFT] = sensVal_leftStroke - SAKYU_KYORI;
+			}else if( ( ( 0.2 + SAKYU_KYORI ) < sensVal_leftStroke ) && ( sensVal_leftStroke <= ( 0.4 + SAKYU_KYORI ) ){
+				// ( sensValで返ってきた値 / 2 )strokeにする(+αする必要あり?)
+				stroke[(int)step_count][LEFT] = ( sensVal_leftStroke - SAKYU_KYORI ) / 2.0;
+			}else if( ( ( 0.4 + SAKYU_KYORI ) < sensVal_leftStroke ) && ( sensVal_leftStroke <= ( 2.0 + SAKYU_KYORI ) )){
+				//stroke[(int)step_count][LEFT] = 0.2;
+			}else{
+				//stroke[(int)step_count][LEFT] = 0.2;
+			}
+
+			if( sensVal_rightStroke <= 0.2 + SAKYU_KYORI ){
+				// sensValで返ってきた値分strokeにする(+αする必要あり?)
+				stroke[(int)step_count][RIGHT] = sensVal_rightStroke - SAKYU_KYORI;
+			}else if( ( ( 0.2 + SAKYU_KYORI ) < sensVal_rightStroke ) && ( sensVal_rightStroke <= ( 0.4 + SAKYU_KYORI ) ){
+				// ( sensValで返ってきた値 / 2 )strokeにする(+αする必要あり?)
+				stroke[(int)step_count][RIGHT] = ( sensVal_rightStroke - SAKYU_KYORI ) / 2.0;
+			}else if( ( ( 0.4 + SAKYU_KYORI ) < sensVal_rightStroke ) && ( sensVal_rightStroke <= ( 2.0 + SAKYU_KYORI ) )){
+				// とりあえず0.2strokeにするとか
+			}else{
+				// とりあえず0.2strokeにするとか
+			}
+		} */
 
 		// 前
 		if( FLheight_changeTiming[MAE] == step_count ){
-			digitalWrite(PIN_LED3, HIGH);
-			if( height_count == 50 ){
-				digitalWrite(PIN_LED3, LOW);
-			}
 			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
 			x_height[ FL ] -= ex_height;
 			if( !FLheighet_flag ){
@@ -925,7 +952,7 @@ void timerWarikomi_10ms() {
 			}else if( step_count == ( change_timing[n] + 0.5 ) ){
 				kataSokudo = kata_sokudo[n + 1];
 			}
-			
+
 			if ( step_count == ( change_timing[n] - 0.5 ) ) {
 				if ( halfStep) { // 0.5~1.0
 					// pair2 の歩幅とシフトを調節
@@ -950,29 +977,6 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					constNum = INT_TIME * div;// kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					
-					/* Serial.print("1-1");
-					Serial.print("\t");
-					Serial.print(incrNum, 4);
-					Serial.print("\t");
-					Serial.print(constNum, 4);
-					Serial.print("\t");
-					Serial.print(step_count);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FR], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BR], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FR], 4);
-					Serial.print("\t");
-					Serial.println(TmpShift[BR], 4); */
 				}
 				else { // 0.0~0.5
 					// pair1 の歩幅とシフトを調節
@@ -998,29 +1002,6 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[BL] + TmpStroke[FR] );
 					constNum = INT_TIME * div;//kataSokudo / ( TmpStroke[BL] + TmpStroke[FR] );
 					
-					/* Serial.print("1-2");
-					Serial.print("\t");
-					Serial.print(incrNum, 4);
-					Serial.print("\t");
-					Serial.print(constNum, 4);
-					Serial.print("\t");
-					Serial.print(step_count);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FR], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BR], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FR], 4);
-					Serial.print("\t");
-					Serial.println(TmpShift[BR], 4); */
 				}
 			}else if (step_count == change_timing[n]) {
 				wait_count++;
@@ -1043,29 +1024,6 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					constNum = INT_TIME * div;//kataSokudo / ( TmpStroke[BL] + TmpStroke[FR] );
 					
-					/* Serial.print("2-1");
-					Serial.print("\t");
-					Serial.print(incrNum, 4);
-					Serial.print("\t");
-					Serial.print(constNum, 4);
-					Serial.print("\t");
-					Serial.print(step_count);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FR], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BR], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FR], 4);
-					Serial.print("\t");
-					Serial.println(TmpShift[BR], 4); */
 				}
 				else {
 					// pair1 の歩幅とシフトを調節
@@ -1086,29 +1044,6 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[BL] + TmpStroke[FR] );
 					constNum = INT_TIME * div;//kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					
-					/* Serial.print("2-2");
-					Serial.print("\t");
-					Serial.print(incrNum, 4);
-					Serial.print("\t");
-					Serial.print(constNum, 4);
-					Serial.print("\t");
-					Serial.print(step_count);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FR], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BR], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FR], 4);
-					Serial.print("\t");
-					Serial.println(TmpShift[BR], 4); */
 				}
 			}else if (step_count == (change_timing[n] + 0.5)) {
 				if (halfStep) {
@@ -1123,29 +1058,6 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					constNum = INT_TIME * div;//* kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					
-					/* Serial.print("3-1");
-					Serial.print("\t");
-					Serial.print(incrNum, 4);
-					Serial.print("\t");
-					Serial.print(constNum, 4);
-					Serial.print("\t");
-					Serial.print(step_count);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FR], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BR], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FR], 4);
-					Serial.print("\t");
-					Serial.println(TmpShift[BR], 4); */
 				}
 				else {
 					// pair2 の歩幅はとシフト新しいやつ
@@ -1159,29 +1071,6 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[BL] + TmpStroke[FR] );
 					constNum = INT_TIME * div;//kataSokudo / ( TmpStroke[BL] + TmpStroke[FR] );
 					
-					/* Serial.print("3-2");
-					Serial.print("\t");
-					Serial.print(incrNum, 4);
-					Serial.print("\t");
-					Serial.print(constNum, 4);
-					Serial.print("\t");
-					Serial.print(step_count);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[FR], 4);
-					Serial.print("\t");
-					Serial.print(TmpStroke[BR], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[BL], 4);
-					Serial.print("\t");
-					Serial.print(TmpShift[FR], 4);
-					Serial.print("\t");
-					Serial.println(TmpShift[BR], 4); */
 				}	
 				
 				n++;
@@ -1191,27 +1080,6 @@ void timerWarikomi_10ms() {
 			kataSokudo_BL = TmpStroke[BL] * div;// / ( TmpStroke[BL] + TmpStroke[FR] );//( TmpStroke[BR] + TmpStroke[BL] );
 			kataSokudo_FR = TmpStroke[FR] * div;// / ( TmpStroke[BL] + TmpStroke[FR] );//( TmpStroke[FL] + TmpStroke[FR] );
 			kataSokudo_BR = TmpStroke[BR] * div;// / ( TmpStroke[BL] + TmpStroke[FR] );//( TmpStroke[BL] + TmpStroke[BR] );
-
-			/* constNum_FL = 2.0 * kataSokudo * INT_TIME / ( TmpStroke[FR] + TmpStroke[FL] );
-			constNum_BL = 2.0 * kataSokudo * INT_TIME / ( TmpStroke[BR] + TmpStroke[BL] );
-			constNum_FR = 2.0 * kataSokudo * INT_TIME / ( TmpStroke[FL] + TmpStroke[FR] );
-			constNum_BR = 2.0 * kataSokudo * INT_TIME / ( TmpStroke[BL] + TmpStroke[BR] ); */
-
-			/* Serial.print(incrNum, 4);
-			Serial.print("\t");
-			Serial.print(constNum, 4);
-			Serial.print("\t");
-			Serial.print(step_count);
-			Serial.print("\t");
-			Serial.print(change_timing[n]);
-			Serial.print("\t");
-			Serial.print(TmpStroke[FL], 4);
-			Serial.print("\t");
-			Serial.print(TmpStroke[BL], 4);
-			Serial.print("\t");
-			Serial.print(TmpStroke[FR], 4);
-			Serial.print("\t");
-			Serial.println(TmpStroke[BR], 4); */
 			
 			//changepara する
 			frontLeft.changeSayu( TmpStroke[FL] );
@@ -1245,38 +1113,6 @@ void timerWarikomi_10ms() {
 		refFRlinear = frontRight.calcLinear( frontRight.calcSayu( incrNum ), frontRight.calcJoge( incrNum ) );
 		refBRangle = BackRight.calcAngle( BackRight.calcSayu( incrNum ), BackRight.calcJoge( incrNum ) );
 		refBRlinear = BackRight.calcLinear( BackRight.calcSayu( incrNum ), BackRight.calcJoge( incrNum ) );
-		
-		
-		/* Serial.print(incrNum, 4);
-		Serial.print("\t");
-		Serial.print(constNum, 4);
-		Serial.print("\t");
-		Serial.print(step_count);
-		Serial.print("\t");
-		Serial.print(frontRight.calcSayu( incrNum ), 4);
-		Serial.print("\t");
-		Serial.print(frontRight.calcJoge( incrNum ), 4);
-		Serial.print("\t");
-		Serial.print(BackRight.calcSayu( incrNum ), 4);
-		Serial.print("\t");
-		Serial.print(BackRight.calcJoge( incrNum ), 4); */
-		/* Serial.print("\t");
-		Serial.print(frontLeft.calcSayu( incrNum ), 4);
-		Serial.print("\t");
-		Serial.print(frontLeft.calcJoge( incrNum ), 4);
-		Serial.print("\t");
-		Serial.print(BackLeft.calcSayu( incrNum ), 4);
-		Serial.print("\t");
-		Serial.print(BackLeft.calcJoge( incrNum ), 4); */
-		
-		/* Serial.print("\t");
-		Serial.print(BackLeft.calcSayu(incrNum), 4);
-		Serial.print("\t");
-		Serial.print(BackLeft.calcJoge(incrNum), 4);
-		Serial.print("\t");
-		Serial.print(frontRight.calcSayu(incrNum), 4);
-		Serial.print("\t");
-		Serial.println(frontRight.calcJoge(incrNum), 4); */
 		
 		// 目標速度
 		refFLAsokudo = FLAichiPID.getCmd(refFLangle, FLangle, 6.0);
@@ -1349,78 +1185,7 @@ void timerWarikomi_10ms() {
 		}else if( 1.0 < BRLcmd ){
 			BRLcmd = 1.0;
 		}
-		
-		// 動かす
-		
-		/* if( FLLcmd != 0.0 ){
-			FLLcmd += refFLLsokudo * 0.05;
-		} */
-		/* if( FLLcmd != 0.0 ){
-			if( FLLcmd < 0.0 ){
-				FLLcmd -= 0.02;
-			}else if( FLLcmd > 0.0 ){
-				FLLcmd += 0.02;
-			}
-		} */
-		/* if( ( fabs( refFLlinear - FLlinear ) > 0.02 ) && FLLcmd != 0.0 ){
-			if( FLLcmd < 0.0 ){
-				FLLcmd -= 0.03;
-			}else if( FLLcmd > 0.0 ){
-				FLLcmd += 0.03;
-			}
-		} */
-		/* if( ( fabs(FLLcmd) >= 0.2 ) && FLLcmd != 0.0 ){
-			if( FLLcmd < 0.0 ){
-				FLLcmd -= 0.03;
-			}else if( FLLcmd > 0.0 ){
-				FLLcmd += 0.03;
-			}
-		} */
-		/* if( FLLcmd != 0.0 ){
-			if( fabs( refFLlinear - FLlinear ) <= 0.01 ){
-				if( FLLcmd < 0.0 ){
-					FLLcmd -= 0.005;
-				}else if( FLLcmd > 0.0 ){
-					FLLcmd += 0.005;
-				}
-			}else if( ( fabs( refFLlinear - FLlinear ) > 0.01 ) && ( fabs( refFLlinear - FLlinear ) < 0.02 ) ){
-				if( FLLcmd < 0.0 ){
-					FLLcmd -= 0.01;
-				}else if( FLLcmd > 0.0 ){
-					FLLcmd += 0.01;
-				}
-			}else if( ( fabs( refFLlinear - FLlinear ) > 0.02 ) && ( fabs( refFLlinear - FLlinear ) < 0.03 ) ){
-				if( FLLcmd < 0.0 ){
-					FLLcmd -= 0.015;
-				}else if( FLLcmd > 0.0 ){
-					FLLcmd += 0.015;
-				}
-			}else if( ( fabs( refFLlinear - FLlinear ) > 0.03 ) && ( fabs( refFLlinear - FLlinear ) < 0.04 ) ){
-				if( FLLcmd < 0.0 ){
-					FLLcmd -= 0.02;
-				}else if( FLLcmd > 0.0 ){
-					FLLcmd += 0.02;
-				}
-			}else if( ( fabs( refFLlinear - FLlinear ) > 0.04 ) && ( fabs( refFLlinear - FLlinear ) < 0.05 ) ){
-				if( FLLcmd < 0.0 ){
-					FLLcmd -= 0.025;
-				}else if( FLLcmd > 0.0 ){
-					FLLcmd += 0.025;
-				}
-			}else if( ( fabs( refFLlinear - FLlinear ) > 0.05 ) && ( fabs( refFLlinear - FLlinear ) < 0.06 ) ){
-				if( FLLcmd < 0.0 ){
-					FLLcmd -= 0.03;
-				}else if( FLLcmd > 0.0 ){
-					FLLcmd += 0.03;
-				}
-			}else if( fabs( refFLlinear - FLlinear ) > 0.07 ){
-				if( FLLcmd < 0.0 ){
-					FLLcmd -= 0.04;
-				}else if( FLLcmd > 0.0 ){
-					FLLcmd += 0.04;
-				}
-			}
-		} */
+	
 		saber1.saberCmd(ANGLE_CMD, FLAcmd);
 		saber1.saberCmd(LINEAR_CMD, FLLcmd);
 		saber2.saberCmd(ANGLE_CMD, BLAcmd);
@@ -1455,11 +1220,11 @@ void timerWarikomi_10ms() {
 		Serial.println(FRLsokudo, 4);// */
 		
 
-		Serial.print(step_count);
+		/* Serial.print(step_count);
 		Serial.print("\t");
 		Serial.print(frontLeft.calcSayu( incrNum ), 4);
 		Serial.print("\t");
-		Serial.println(frontLeft.calcJoge( incrNum ), 4);
+		Serial.println(frontLeft.calcJoge( incrNum ), 4); */
 		/* Serial.print("\t");
 		Serial.print(BackLeft.calcSayu( incrNum ), 4);
 		Serial.print("\t");
@@ -1472,6 +1237,43 @@ void timerWarikomi_10ms() {
 		Serial.print(BackRight.calcSayu( incrNum ), 4);
 		Serial.print("\t");
 		Serial.println(BackRight.calcJoge( incrNum ), 4); */
+
+		/* if( incrNum > ( 1.0 - ( constNum * 4.0 ) ) ){
+			if( sensVal_count < 4 ){
+				sensVal_left[ sensVal_count ] = gSensor[0].readRangeSingleMillimeters() * 0.001;
+				sensVal_right[ sensVal_count ] = gSensor[1].readRangeSingleMillimeters() * 0.001;
+			} else {
+				sensVal_left[ 0 ] = gSensor[0].readRangeSingleMillimeters() * 0.001;
+				sensVal_right[ 0 ] = gSensor[1].readRangeSingleMillimeters() * 0.001;
+			}
+			sensVal_count++;
+		}else{
+			sensVal_count = 0;
+		} */
+		/* if( incrNum > ( 1.0 - constNum ) ){
+			Serial.print(step_count);
+			Serial.print("\t");
+			sensVal_left[0] = gSensor[0].readRangeSingleMillimeters() * 0.001;
+			Serial.print(sensVal_left[0], 4);
+			Serial.print("\t");
+			sensVal_right[0] = gSensor[1].readRangeSingleMillimeters() * 0.001;
+			Serial.println(sensVal_right[0], 4);
+		} */
+
+		kari++;
+
+		if( kari == 6 ){
+			Serial.print(step_count);
+			Serial.print("\t");
+			sensVal_left[0] = (double)gSensor[0].readRangeSingleMillimeters() * 0.001;
+			if (gSensor[0].timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+			Serial.print(sensVal_left[0], 4);
+			Serial.print("\t");
+			sensVal_right[0] = (double)gSensor[1].readRangeSingleMillimeters() * 0.001;
+			if (gSensor[1].timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+			Serial.println(sensVal_right[0], 4);
+			kari = 0;
+		}
 	}
 }
 
@@ -1514,10 +1316,28 @@ void setup() {
 	Serial.begin(115200);
 	
 	SWSerial1.begin(115200);
-	//ST1.autobaud();
-	//ST2.autobaud();
-	//ST3.autobaud();
-	//ST4.autobaud();
+	
+	Wire.begin();
+	for (int i = 0; i < SENSOR_NUM; i++){
+		pinMode(VL53L0X_GPIO[i], OUTPUT);
+		digitalWrite(VL53L0X_GPIO[i], LOW);
+	}
+
+	for (int i = 0; i < SENSOR_NUM; i++) {
+		// センサを初期化
+		pinMode(VL53L0X_GPIO[i], INPUT);
+		if (gSensor[i].init() == true){
+			gSensor[i].setTimeout(50);//(100);
+			gSensor[i].startContinuous();
+			int address = ADDRESS_00 + (i * 2);
+			gSensor[i].setAddress(address);
+			//gSensor[i].setMeasurementTimingBudget(20000);
+		}else{
+			Serial.print("Sensor ");
+			Serial.print(i);
+			Serial.println(" error");
+		}
+	}
 	
 	FLLichiPID.PIDinit(0.0, 0.0);
 	FLAichiPID.PIDinit(0.0, 0.0);
