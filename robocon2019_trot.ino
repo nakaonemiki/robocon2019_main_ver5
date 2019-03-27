@@ -48,8 +48,8 @@
 #define PIN_FRSW	(27)//(A5)//
 #define PIN_BRSW	(47)//(A4)//
 #define PIN_START	(29)//(28)//
-#define PIN_SAKYU_LEFT	(44)
-#define PIN_SAKYU_RIGHT	(45)
+#define PIN_ASHISAKI_FL	(44)
+#define PIN_ASHISAKI_FR	(45)
 
 // mode
 #define STATE_INIT_1ST	(0)
@@ -57,7 +57,8 @@
 
 // height_changeTimingで使用
 #define CHANGE_HEIGHT	(0.1)
-#define CHANGE_HEIGHT_SHORT	(0.09)
+#define CHANGE_HEIGHT_SHORT	(0.095)
+#define CHANGE_HEIGHT_VERYSHORT	(0.03)
 #define MAE		(0)
 #define ATO		(1)
 
@@ -137,14 +138,19 @@ mySaberClass saber4(&ST4);
 	宣言
 *****************************************/
 double kataSokudo = 0.2;//0.25;//0.2;//2;
-double kata_sokudo[4 + 1] = { 0.2, 0.16, 0.06, 0.08, 0.1 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
+double kata_sokudo[10 + 1] = { 0.2, 0.16, 0.06, 0.08, 0.1, 0.08, 0.08, 0.07, 0.1, 0.1 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
 
-double stroke[4 + 1][2] = { // left, right
-	{ 0.2, 0.2 },//{ 0.18, 0.20 }, 
-	{ 0.1, 0.23 },//{ 0.16, 0.16 },//{ 0.16, 0.23 }, 
-	{ 0.08, 0.08 },//{ 0.12, 0.12 },//{ 0.1, 0.1 },//{ 0.13, 0.13 }, 
-	{ 0.085, 0.085 },//{ 0.11, 0.11 }, 
-	{ 0.12, 0.12 }//{ 0.2, 0.2 }
+double stroke[10 + 1][2] = { // left, right
+	/* 0 */{ 0.2, 0.2 },//{ 0.18, 0.20 }, 
+	/* 1 */{ 0.1, 0.23 },//{ 0.16, 0.16 },//{ 0.16, 0.23 }, 
+	/* 2 */{ 0.08, 0.08 },//{ 0.12, 0.12 },//{ 0.1, 0.1 },//{ 0.13, 0.13 }, 
+	/* 3 */{ 0.085, 0.085 },//{ 0.11, 0.11 }, 
+	/* 4 */{ 0.1225, 0.1225 },//{ 0.2, 0.2 }
+	/* 5 */{ 0.0, 0.15 },
+	/* 6 */{ 0.15, 0.0 },
+	/* 7 */{ 0.08, 0.08 },
+	/* 8 */{ 0.15, 0.15 },
+	/* 9 */{ 0.15, 0.15 }
 };
 
 double x_height[4] = { 0.32, 0.32, 0.32, 0.32 };//{ 0.33, 0.33, 0.33, 0.33 };//{ 0.34, 0.34, 0.34, 0.34 };// FL, BL, FR, BR
@@ -167,9 +173,14 @@ double FRheight_changeTiming[2] = { 30.0, 40.0 };	// change前, change後
 
 double BRheight_changeTiming[2] = { 30.0, 40.0 };	// change前, change後
 
-double shift[4 + 1][4] = { // FL, BL, FR, BR
+double shift[10 + 1][4] = { // FL, BL, FR, BR
 	{0.00, 0.03, 0.00, 0.03},
 	{0.00, 0.03, 0.00, 0.03},
+	{-0.02, 0.03, -0.02, 0.03},
+	{-0.02, 0.03, -0.02, 0.03},
+	{-0.02, 0.03, -0.02, 0.03},
+	{-0.02, 0.03, -0.02, 0.03},
+	{-0.02, 0.03, -0.02, 0.03},
 	{-0.02, 0.03, -0.02, 0.03},
 	{-0.02, 0.03, -0.02, 0.03},
 	{-0.02, 0.03, -0.02, 0.03},
@@ -222,7 +233,7 @@ double addFL = 0.0, addBL = 0.0, addFR = 0.0, addBR = 0.0;
 double incrNum = 0.0;
 
 // まっすぐから左旋回の時間， 左旋回からまっすぐに戻るまでの時間， まっすぐから右旋回までの時間， 右旋回からまっすぐの時間
-double change_timing[4] = {4.0, 7.5, 300.0, 400.0};//{5.0, 2.0, 3.0, 4.0};//{1.0, 2.0, 3.0, 4.0};
+double change_timing[10] = {4.5, 8.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0 };//{4.0, 7.5, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0 };
 
 int count = 0; // 時間計測するために使ってるだけ
 int wait_count = 0;
@@ -272,6 +283,19 @@ boolean FLheighet_flag = false;
 boolean BLheighet_flag = false;
 boolean FRheighet_flag = false;
 boolean BRheighet_flag = false;
+
+double height_long_timing = 100.0;
+
+boolean rope_FL = false;
+boolean rope_BL = false;
+boolean rope_FR = false;
+boolean rope_BR = false;
+
+double stepRope_FL = 0.0;
+double stepRope_BL = 0.0;
+double stepRope_FR = 0.0;
+double stepRope_BR = 0.0;
+
 
 void timerWarikomi_10ms() {
 	if(ledcount >= 25) {
@@ -801,47 +825,111 @@ void timerWarikomi_10ms() {
 			}
 		} */
 
-		// リミットスイッチ当たったら
-		if( !digitalRead( PIN_SAKYU_LEFT ) ){
+		// リミットスイッチ当たったら(砂丘)
+		if( !digitalRead( PIN_ASHISAKI_FL ) && !sakyuMode){
 			sakyuMode_left = true;
-			//stroke[ 3 ][ LEFT ] = 0.0;
-			//stroke[ 3 ][ RIGHT ] = 0.2;
 		}
-		if( !digitalRead( PIN_SAKYU_RIGHT ) ){
+		if( !digitalRead( PIN_ASHISAKI_FR ) && !sakyuMode){
 			sakyuMode_right = true;
-			//stroke[ 3 ][ LEFT ] = 0.2;
-			//stroke[ 3 ][ RIGHT ] = 0.0;
 		}
+
+		// リミットスイッチ当たったら(ロープ)
+		/* if( !digitalRead( PIN_ASHISAKI_FL ) && ( n > 6 ) ){
+			if( !rope_FL && ( step_count > stepRope_FL ) ){
+				rope_FL = true;
+				stepRope_FL = step_count + 1.5;
+
+				if( halfStep ){
+					FLheight_changeTiming[MAE] = step_count + 0.5;
+					//FLheight_changeTiming[ATO] = step_count + 1.5;
+
+					//FRheight_changeTiming[MAE] = step_count + 1.0;
+					//FRheight_changeTiming[ATO] = step_count + 2.0;
+				}else{
+					FLheight_changeTiming[MAE] = step_count + 1.0;
+					//FLheight_changeTiming[ATO] = step_count + 2.0;
+
+					//FRheight_changeTiming[MAE] = step_count + 0.5;
+					//FRheight_changeTiming[ATO] = step_count + 1.5;
+				}
+			}
+		} */
+
+		/* if( !digitalRead( PIN_ASHISAKI_FR ) && ( n > 6 ) ){
+			if( !rope_FR && ( step_count > stepRope_FR ) ){
+				rope_FR = true;
+				stepRope_FR = step_count + 1.5;
+
+				if( halfStep ){
+					//FLheight_changeTiming[MAE] = step_count + 0.5;
+					//FLheight_changeTiming[ATO] = step_count + 1.5;
+
+					FRheight_changeTiming[MAE] = step_count + 1.0;
+					//FRheight_changeTiming[ATO] = step_count + 2.0;
+				}else{
+					//FLheight_changeTiming[MAE] = step_count + 1.0;
+					//FLheight_changeTiming[ATO] = step_count + 2.0;
+
+					FRheight_changeTiming[MAE] = step_count + 0.5;
+					//FRheight_changeTiming[ATO] = step_count + 1.5;
+				}
+			}
+		} */
+
+		if( rope_FL == true && ( stepRope_FL <= step_count ) ){
+			rope_FL = false;
+		}else if( rope_BL == true && ( stepRope_BL <= step_count ) ){
+			rope_BL = false;
+		}else if( rope_FR == true && ( stepRope_FR <= step_count ) ){
+			rope_FR = false;
+		}else if( rope_BR == true && ( stepRope_BR <= step_count ) ){
+			rope_BR = false;
+		}
+
+
 
 		if( sakyuMode_left && sakyuMode_right && !sakyuMode ){
 			sakyuMode = true;
 			change_timing[ n ] = step_count + 1.0;
-			change_timing[ n + 1 ] = step_count + 3.5;
+			change_timing[ n + 1 ] = step_count + 3.5;// 後ろ足が段差登る時の歩幅
+
 			//change_timing[  ] = step_count + 4.0; // 砂丘を抜けたあと旋回
 			if( halfStep ){//0~0.5
-				FLheight_changeTiming[MAE] = step_count + 0.5;
-				FLheight_changeTiming[ATO] = step_count + 2.5;//1.5;
+				change_timing[ n + 2 ] = step_count + 7.0;// 左旋回
+				change_timing[ n + 3 ] = step_count + 10.0;//9.0;// 右旋回のタイミング
+				change_timing[ n + 4 ] = step_count + 16.0;//11.5;// 元の歩幅に戻るタイミング
 
-				BLheight_changeTiming[MAE] = step_count + 4.0;//3.0;//2.0;
-				BLheight_changeTiming[ATO] = step_count + 6.0;//4.0;//3.0;
+				height_long_timing = change_timing[ n + 3 ];
+
+				FLheight_changeTiming[MAE] = step_count + 0.5;
+				FLheight_changeTiming[ATO] = step_count + 2.5;
+
+				BLheight_changeTiming[MAE] = step_count + 4.0;
+				BLheight_changeTiming[ATO] = step_count + 6.0;
 
 				FRheight_changeTiming[MAE] = step_count + 1.0;
-				FRheight_changeTiming[ATO] = step_count + 3.0;//2.0;
+				FRheight_changeTiming[ATO] = step_count + 3.0;
 
-				BRheight_changeTiming[MAE] = step_count + 4.5;//2.5;//1.5;
-				BRheight_changeTiming[ATO] = step_count + 5.5;//4.5;//2.5;
+				BRheight_changeTiming[MAE] = step_count + 4.5;
+				BRheight_changeTiming[ATO] = step_count + 5.5;
 			}else{//0.5~1
-				FLheight_changeTiming[MAE] = step_count + 1.0;
-				FLheight_changeTiming[ATO] = step_count + 3.0;//2.0;
+				change_timing[ n + 2 ] = step_count + 7.5;// 左旋回
+				change_timing[ n + 3 ] = step_count + 10.5;//9.5;// 右旋回のタイミング
+				change_timing[ n + 4 ] = step_count + 16.5;//12.0;// 元の歩幅に戻るタイミング
 
-				BLheight_changeTiming[MAE] = step_count + 4.5;//2.5;//1.5;
-				BLheight_changeTiming[ATO] = step_count + 6.5;//4.5;//2.5;
+				height_long_timing = change_timing[ n + 3 ];
+
+				FLheight_changeTiming[MAE] = step_count + 1.0;
+				FLheight_changeTiming[ATO] = step_count + 3.0;
+
+				BLheight_changeTiming[MAE] = step_count + 4.5;
+				BLheight_changeTiming[ATO] = step_count + 6.5;
 
 				FRheight_changeTiming[MAE] = step_count + 1.5;
-				FRheight_changeTiming[ATO] = step_count + 3.5;//1.5;
+				FRheight_changeTiming[ATO] = step_count + 3.5;
 
-				BRheight_changeTiming[MAE] = step_count + 5.0;//3.0;//2.0;
-				BRheight_changeTiming[ATO] = step_count + 6.0;//4.0;//3.0;
+				BRheight_changeTiming[MAE] = step_count + 5.0;
+				BRheight_changeTiming[ATO] = step_count + 6.0;
 				/* FLheight_changeTiming[MAE] = step_count + 1.0;
 				FLheight_changeTiming[ATO] = step_count + 3.0;//2.0;
 
@@ -856,147 +944,335 @@ void timerWarikomi_10ms() {
 			}
 		}
 
-		// 前
-		if( FLheight_changeTiming[MAE] == step_count ){
-			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
-			x_height[ FL ] -= ex_height;
+
+		if( height_long_timing == step_count ){
+			ex_height = CHANGE_HEIGHT_VERYSHORT / ( 0.5 / constNum );
+			x_height[ FL ] += ex_height;
+			frontLeft.changeJoge( x_height[ FL ] );
+
+			ex_height = CHANGE_HEIGHT_VERYSHORT / ( 0.5 / constNum );
+			x_height[ BL ] += ex_height;
+			BackLeft.changeJoge( x_height[ BL ] );
+
+			ex_height = CHANGE_HEIGHT_VERYSHORT / ( 0.5 / constNum );
+			x_height[ FR ] += ex_height;
+			frontRight.changeJoge( x_height[ FR ] );
+
+			ex_height = CHANGE_HEIGHT_VERYSHORT / ( 0.5 / constNum );
+			x_height[ BR ] += ex_height;
+			BackRight.changeJoge( x_height[ BR ] );
+		}
+
+		if( n < 7 ){
+			// 砂丘・前
+			if( FLheight_changeTiming[MAE] == step_count ){
+				ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+				x_height[ FL ] -= ex_height;
+				if( !FLheighet_flag ){
+					height[ FL ] += 0.05;
+					FLheighet_flag = true;
+				}
+				
+				frontLeft.changeJoge( x_height[ FL ] );
+				frontLeft.changeLegHeight( height[ FL ] );
+				height_count++;
+			}else if( ( FLheight_changeTiming[MAE] + 0.5 ) == step_count ){
+				if( FLheighet_flag ){
+					height[ FL ] -= 0.05;
+					FLheighet_flag = false;
+				}
+				frontLeft.changeLegHeight( height[ FL ] );
+			}
+
+			if( BLheight_changeTiming[MAE] == step_count ){
+				ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+				x_height[ BL ] -= ex_height;
+				if( !BLheighet_flag ){
+					height[ BL ] += 0.05;
+					BLheighet_flag = true;
+				}
+				BackLeft.changeJoge( x_height[ BL ] );
+				BackLeft.changeLegHeight( height[ BL ] );
+			}else if( ( BLheight_changeTiming[MAE] + 0.5 ) == step_count ){
+				if( BLheighet_flag ){
+					height[ BL ] -= 0.05;
+					BLheighet_flag = false;
+				}
+				BackLeft.changeLegHeight( height[ BL ] );
+			}
+
+			if( FRheight_changeTiming[MAE] == step_count ){
+				ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+				x_height[ FR ] -= ex_height;
+				if( !FRheighet_flag ){
+					height[ FR ] += 0.05;
+					FRheighet_flag = true;
+				}
+				frontRight.changeJoge( x_height[ FR ] );
+				frontRight.changeLegHeight( height[ FR ] );
+			}else if( ( FRheight_changeTiming[MAE] + 0.5 ) == step_count ){
+				if( FRheighet_flag ){
+					height[ FR ] -= 0.05;
+					FRheighet_flag = false;
+				}
+				frontRight.changeLegHeight( height[ FR ] );
+			}
+
+			if( BRheight_changeTiming[MAE] == step_count ){
+				ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+				x_height[ BR ] -= ex_height;
+				if( !BRheighet_flag ){
+					height[ BR ] += 0.05;
+					BRheighet_flag = true;
+				}
+				BackRight.changeJoge(x_height[ BR ]);
+				BackRight.changeLegHeight( height[ BR ] );
+			}else if( ( BRheight_changeTiming[MAE] + 0.5 ) == step_count ){
+				if( !BRheighet_flag ){
+					height[ BR ] -= 0.05;
+					BRheighet_flag = false;
+				}
+				BackRight.changeLegHeight( height[ BR ] );
+			}
+
+
+			// 砂丘・後
+			if( FLheight_changeTiming[ATO] == step_count ){
+				ex_height = CHANGE_HEIGHT_SHORT / ( 0.5 / constNum );
+				x_height[ FL ] += ex_height;
+				if( !FLheighet_flag ){
+					height[ FL ] += 0.05;
+					FLheighet_flag = true;
+				}
+				frontLeft.changeJoge( x_height[ FL ] );
+				frontLeft.changeLegHeight( height[ FL ] );
+			}else if( ( FLheight_changeTiming[ATO] + 0.5 ) == step_count ){
+				if( FLheighet_flag ){
+					height[ FL ] -= 0.05;
+					FLheighet_flag = false;
+				}
+				frontLeft.changeLegHeight( height[ FL ] );
+			}
+
+			if( BLheight_changeTiming[ATO] == step_count ){
+				ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+				x_height[ BL ] += ex_height;
+				if( !BLheighet_flag ){
+					height[ BL ] += 0.05;
+					BLheighet_flag = true;
+				}
+				BackLeft.changeJoge( x_height[ BL ] );
+				BackLeft.changeLegHeight( height[ BL ] );
+			}else if( ( BLheight_changeTiming[ATO] + 0.5 ) == step_count ){
+				if( BLheighet_flag ){
+					height[ BL ] -= 0.05;
+					BLheighet_flag = false;
+				}
+				BackLeft.changeLegHeight( height[ BL ] );
+			}
+
+			if( FRheight_changeTiming[ATO] == step_count ){
+				ex_height = CHANGE_HEIGHT_SHORT / ( 0.5 / constNum );
+				x_height[ FR ] += ex_height;
+				if( !FRheighet_flag ){
+					height[ FR ] += 0.05;
+					FRheighet_flag = true;
+				}
+				frontRight.changeJoge(x_height[ FR ]);
+				frontRight.changeLegHeight( height[ FR ] );
+			}else if( ( FRheight_changeTiming[ATO] + 0.5 ) == step_count ){
+				if( FRheighet_flag ){
+					height[ FR ] -= 0.05;
+					FRheighet_flag = false;
+				}
+				frontRight.changeLegHeight( height[ FR ] );
+			}
+
+			if( BRheight_changeTiming[ATO] == step_count ){
+				ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
+				x_height[ BR ] += ex_height;
+				if( !BRheighet_flag ){
+					height[ BR ] += 0.05;
+					BRheighet_flag = true;
+				}
+				BackRight.changeJoge(x_height[ BR ]);
+				BackRight.changeLegHeight( height[ BR ] );
+			}else if( ( BRheight_changeTiming[ATO] + 0.5 ) == step_count ){
+				if( BRheighet_flag ){
+					height[ BR ] -= 0.05;
+					BRheighet_flag = false;
+				}
+				BackRight.changeLegHeight( height[ BR ] );
+			}
+		} else { // n >= 8
+			// ロープ・前
 			if( !FLheighet_flag ){
-				height[ FL ] += 0.05;
+				height[ FL ] += 0.135;
 				FLheighet_flag = true;
 			}
 			
-			frontLeft.changeJoge( x_height[ FL ] );
 			frontLeft.changeLegHeight( height[ FL ] );
-			height_count++;
-		}else if( ( FLheight_changeTiming[MAE] + 0.5 ) == step_count ){
-			if( FLheighet_flag ){
-				height[ FL ] -= 0.05;
-				FLheighet_flag = false;
-			}
-			frontLeft.changeLegHeight( height[ FL ] );
-		}
+			/* if( FLheight_changeTiming[MAE] == step_count ){
+				//ex_height = CHANGE_HEIGHT / ( 0.25 / constNum );
+				//x_height[ FL ] -= ex_height;
+				if( !FLheighet_flag ){
+					height[ FL ] += 0.08;
+					FLheighet_flag = true;
+				}
+				
+				//frontLeft.changeJoge( x_height[ FL ] );
+				frontLeft.changeLegHeight( height[ FL ] );
+			}else if( ( FLheight_changeTiming[MAE] + 0.5 ) == step_count ){
+				if( FLheighet_flag ){
+					height[ FL ] -= 0.08;
+					FLheighet_flag = false;
+				}
+				frontLeft.changeLegHeight( height[ FL ] );
+			} */
 
-		if( BLheight_changeTiming[MAE] == step_count ){
-			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
-			x_height[ BL ] -= ex_height;
 			if( !BLheighet_flag ){
-				height[ BL ] += 0.05;
+				height[ BL ] += 0.135;
 				BLheighet_flag = true;
 			}
-			BackLeft.changeJoge( x_height[ BL ] );
-			BackLeft.changeLegHeight( height[ BL ] );
-		}else if( ( BLheight_changeTiming[MAE] + 0.5 ) == step_count ){
-			if( BLheighet_flag ){
-				height[ BL ] -= 0.05;
-				BLheighet_flag = false;
-			}
-			BackLeft.changeLegHeight( height[ BL ] );
-		}
 
-		if( FRheight_changeTiming[MAE] == step_count ){
-			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
-			x_height[ FR ] -= ex_height;
+			BackLeft.changeLegHeight( height[ BL ] );
+			/* if( BLheight_changeTiming[MAE] == step_count ){
+				//ex_height = CHANGE_HEIGHT / ( 0.25 / constNum );
+				//x_height[ BL ] -= ex_height;
+				if( !BLheighet_flag ){
+					height[ BL ] += 0.08;
+					BLheighet_flag = true;
+				}
+				//BackLeft.changeJoge( x_height[ BL ] );
+				BackLeft.changeLegHeight( height[ BL ] );
+			}else if( ( BLheight_changeTiming[MAE] + 0.5 ) == step_count ){
+				if( BLheighet_flag ){
+					height[ BL ] -= 0.08;
+					BLheighet_flag = false;
+				}
+				BackLeft.changeLegHeight( height[ BL ] );
+			} */
+
 			if( !FRheighet_flag ){
-				height[ FR ] += 0.05;
+				height[ FR ] += 0.135;
 				FRheighet_flag = true;
 			}
-			frontRight.changeJoge( x_height[ FR ] );
+			
 			frontRight.changeLegHeight( height[ FR ] );
-		}else if( ( FRheight_changeTiming[MAE] + 0.5 ) == step_count ){
-			if( FRheighet_flag ){
-				height[ FR ] -= 0.05;
-				FRheighet_flag = false;
-			}
-			frontRight.changeLegHeight( height[ FR ] );
-		}
 
-		if( BRheight_changeTiming[MAE] == step_count ){
-			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
-			x_height[ BR ] -= ex_height;
+			/* if( FRheight_changeTiming[MAE] == step_count ){
+				//ex_height = CHANGE_HEIGHT / ( 0.25 / constNum );
+				//x_height[ FR ] -= ex_height;
+				if( !FRheighet_flag ){
+					height[ FR ] += 0.08;
+					FRheighet_flag = true;
+				}
+				//frontRight.changeJoge( x_height[ FR ] );
+				frontRight.changeLegHeight( height[ FR ] );
+			}else if( ( FRheight_changeTiming[MAE] + 0.5 ) == step_count ){
+				if( FRheighet_flag ){
+					height[ FR ] -= 0.08;
+					FRheighet_flag = false;
+				}
+				frontRight.changeLegHeight( height[ FR ] );
+			} */
+
 			if( !BRheighet_flag ){
-				height[ BR ] += 0.05;
+				height[ BR ] += 0.135;
 				BRheighet_flag = true;
 			}
-			BackRight.changeJoge(x_height[ BR ]);
+			
 			BackRight.changeLegHeight( height[ BR ] );
-		}else if( ( BRheight_changeTiming[MAE] + 0.5 ) == step_count ){
-			if( !BRheighet_flag ){
-				height[ BR ] -= 0.05;
-				BRheighet_flag = false;
-			}
-			BackRight.changeLegHeight( height[ BR ] );
-		}
+
+			/* if( BRheight_changeTiming[MAE] == step_count ){
+				//ex_height = CHANGE_HEIGHT / ( 0.25 / constNum );
+				//x_height[ BR ] -= ex_height;
+				if( !BRheighet_flag ){
+					height[ BR ] += 0.08;
+					BRheighet_flag = true;
+				}
+				//BackRight.changeJoge(x_height[ BR ]);
+				BackRight.changeLegHeight( height[ BR ] );
+			}else if( ( BRheight_changeTiming[MAE] + 0.5 ) == step_count ){
+				if( !BRheighet_flag ){
+					height[ BR ] -= 0.08;
+					BRheighet_flag = false;
+				}
+				BackRight.changeLegHeight( height[ BR ] );
+			} */
 
 
-		// 後
-		if( FLheight_changeTiming[ATO] == step_count ){
-			ex_height = CHANGE_HEIGHT_SHORT / ( 0.5 / constNum );
-			x_height[ FL ] += ex_height;
-			frontLeft.changeJoge(x_height[ FL ]);
-			if( !FLheighet_flag ){
-				height[ FL ] += 0.05;
-				FLheighet_flag = true;
-			}
-			frontLeft.changeJoge( x_height[ FL ] );
-			frontLeft.changeLegHeight( height[ FL ] );
-		}else if( ( FLheight_changeTiming[ATO] + 0.5 ) == step_count ){
-			if( FLheighet_flag ){
-				height[ FL ] -= 0.05;
-				FLheighet_flag = false;
-			}
-			frontLeft.changeLegHeight( height[ FL ] );
-		}
+			// ロープ・後
+			/* if( FLheight_changeTiming[ATO] == step_count ){
+				//ex_height = CHANGE_HEIGHT_SHORT / ( 0.25 / constNum );
+				//x_height[ FL ] += ex_height;
+				frontLeft.changeJoge(x_height[ FL ]);
+				if( !FLheighet_flag ){
+					height[ FL ] += 0.08;
+					FLheighet_flag = true;
+				}
+				//frontLeft.changeJoge( x_height[ FL ] );
+				frontLeft.changeLegHeight( height[ FL ] );
+			}else if( ( FLheight_changeTiming[ATO] + 0.5 ) == step_count ){
+				if( FLheighet_flag ){
+					height[ FL ] -= 0.08;
+					FLheighet_flag = false;
+				}
+				frontLeft.changeLegHeight( height[ FL ] );
+			} */
 
-		if( BLheight_changeTiming[ATO] == step_count ){
-			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
-			x_height[ BL ] += ex_height;
-			if( !BLheighet_flag ){
-				height[ BL ] += 0.05;
-				BLheighet_flag = true;
-			}
-			BackLeft.changeJoge( x_height[ BL ] );
-			BackLeft.changeLegHeight( height[ BL ] );
-		}else if( ( BLheight_changeTiming[ATO] + 0.5 ) == step_count ){
-			if( BLheighet_flag ){
-				height[ BL ] -= 0.05;
-				BLheighet_flag = false;
-			}
-			BackLeft.changeLegHeight( height[ BL ] );
-		}
+			/* if( BLheight_changeTiming[ATO] == step_count ){
+				//ex_height = CHANGE_HEIGHT / ( 0.25 / constNum );
+				//x_height[ BL ] += ex_height;
+				if( !BLheighet_flag ){
+					height[ BL ] += 0.08;
+					BLheighet_flag = true;
+				}
+				//BackLeft.changeJoge( x_height[ BL ] );
+				BackLeft.changeLegHeight( height[ BL ] );
+			}else if( ( BLheight_changeTiming[ATO] + 0.5 ) == step_count ){
+				if( BLheighet_flag ){
+					height[ BL ] -= 0.08;
+					BLheighet_flag = false;
+				}
+				BackLeft.changeLegHeight( height[ BL ] );
+			} */
 
-		if( FRheight_changeTiming[ATO] == step_count ){
-			ex_height = CHANGE_HEIGHT_SHORT / ( 0.5 / constNum );
-			x_height[ FR ] += ex_height;
-			if( !FRheighet_flag ){
-				height[ FR ] += 0.05;
-				FRheighet_flag = true;
-			}
-			frontRight.changeJoge(x_height[ FR ]);
-			frontRight.changeLegHeight( height[ FR ] );
-		}else if( ( FRheight_changeTiming[ATO] + 0.5 ) == step_count ){
-			if( FRheighet_flag ){
-				height[ FR ] -= 0.05;
-				FRheighet_flag = false;
-			}
-			frontRight.changeLegHeight( height[ FR ] );
-		}
+			/* if( FRheight_changeTiming[ATO] == step_count ){
+				//ex_height = CHANGE_HEIGHT_SHORT / ( 0.25 / constNum );
+				//x_height[ FR ] += ex_height;
+				if( !FRheighet_flag ){
+					height[ FR ] += 0.08;
+					FRheighet_flag = true;
+				}
+				//frontRight.changeJoge(x_height[ FR ]);
+				frontRight.changeLegHeight( height[ FR ] );
+			}else if( ( FRheight_changeTiming[ATO] + 0.5 ) == step_count ){
+				if( FRheighet_flag ){
+					height[ FR ] -= 0.08;
+					FRheighet_flag = false;
+				}
+				frontRight.changeLegHeight( height[ FR ] );
+			} */
 
-		if( BRheight_changeTiming[ATO] == step_count ){
-			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
-			x_height[ BR ] += ex_height;
-			if( !BRheighet_flag ){
-				height[ BR ] += 0.05;
-				BRheighet_flag = true;
-			}
-			BackRight.changeJoge(x_height[ BR ]);
-			BackRight.changeLegHeight( height[ BR ] );
-		}else if( ( BRheight_changeTiming[ATO] + 0.5 ) == step_count ){
-			if( BRheighet_flag ){
-				height[ BR ] -= 0.05;
-				BRheighet_flag = false;
-			}
-			BackRight.changeLegHeight( height[ BR ] );
-		}
+			/* if( BRheight_changeTiming[ATO] == step_count ){
+				//ex_height = CHANGE_HEIGHT / ( 0.25 / constNum );
+				//x_height[ BR ] += ex_height;
+				if( !BRheighet_flag ){
+					height[ BR ] += 0.08;
+					BRheighet_flag = true;
+				}
+				//BackRight.changeJoge(x_height[ BR ]);
+				BackRight.changeLegHeight( height[ BR ] );
+			}else if( ( BRheight_changeTiming[ATO] + 0.5 ) == step_count ){
+				if( BRheighet_flag ){
+					height[ BR ] -= 0.08;
+					BRheighet_flag = false;
+				}
+				BackRight.changeLegHeight( height[ BR ] );
+			} */
+		} // else end( n >= 8 )
+
 
 		if (pre_halfStep != halfStep) {
 			
@@ -1269,11 +1545,13 @@ void timerWarikomi_10ms() {
 
 		Serial.print(step_count);
 		Serial.print("\t");
-		Serial.print(sakyuMode_left);
+		Serial.print(digitalRead(PIN_ASHISAKI_FL));
 		Serial.print("\t");
-		Serial.print(sakyuMode_right);
+		Serial.print(digitalRead(PIN_ASHISAKI_FR));
 		Serial.print("\t");
-		Serial.println(n);
+		Serial.print(x_height[0], 4);
+		Serial.print("\t");
+		Serial.println(height_long_timing);
 		
 
 		/* Serial.print(step_count);
@@ -1349,8 +1627,8 @@ void setup() {
 	pinMode(PIN_FRSW, INPUT);
 	pinMode(PIN_BRSW, INPUT);
 	pinMode(PIN_START, INPUT);
-	pinMode(PIN_SAKYU_LEFT, INPUT);
-	pinMode(PIN_SAKYU_RIGHT, INPUT);
+	pinMode(PIN_ASHISAKI_FL, INPUT);
+	pinMode(PIN_ASHISAKI_FR, INPUT);
 
 	pinMode(PIN_15, OUTPUT);
 	digitalWrite(PIN_15, HIGH);
