@@ -48,6 +48,8 @@
 #define PIN_FRSW	(27)//(A5)//
 #define PIN_BRSW	(47)//(A4)//
 #define PIN_START	(29)//(28)//
+#define PIN_SAKYU_LEFT	(44)
+#define PIN_SAKYU_RIGHT	(45)
 
 // mode
 #define STATE_INIT_1ST	(0)
@@ -77,9 +79,9 @@
 //	距離センサ
 //----------------------------------------
 
-#define SENSOR_NUM  2 // 使用するセンサーの数
+/* #define SENSOR_NUM  2 // 使用するセンサーの数
 #define ADDRESS_DEFALUT 0b0101001 // 0x29
-#define ADDRESS_00 (ADDRESS_DEFALUT + 2)
+#define ADDRESS_00 (ADDRESS_DEFALUT + 2) */
 
 /*****************************************
 	class
@@ -134,15 +136,15 @@ mySaberClass saber4(&ST4);
 /*****************************************
 	宣言
 *****************************************/
-double kataSokudo = 0.16;//0.25;//0.2;//2;
-double kata_sokudo[4 + 1] = { 0.16, 0.16, 0.15, 0.15, 0.15 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
+double kataSokudo = 0.2;//0.25;//0.2;//2;
+double kata_sokudo[4 + 1] = { 0.2, 0.16, 0.06, 0.08, 0.1 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
 
 double stroke[4 + 1][2] = { // left, right
-	{ 0.17, 0.17 },//{ 0.18, 0.20 }, 
-	{ 0.17, 0.17 },//{ 0.16, 0.16 },//{ 0.16, 0.23 }, 
-	{ 0.17, 0.17 },//{ 0.13, 0.13 }, 
-	{ 0.2, 0.2 }, 
-	{ 0.2, 0.2 }
+	{ 0.2, 0.2 },//{ 0.18, 0.20 }, 
+	{ 0.1, 0.23 },//{ 0.16, 0.16 },//{ 0.16, 0.23 }, 
+	{ 0.08, 0.08 },//{ 0.12, 0.12 },//{ 0.1, 0.1 },//{ 0.13, 0.13 }, 
+	{ 0.085, 0.085 },//{ 0.11, 0.11 }, 
+	{ 0.12, 0.12 }//{ 0.2, 0.2 }
 };
 
 double x_height[4] = { 0.32, 0.32, 0.32, 0.32 };//{ 0.33, 0.33, 0.33, 0.33 };//{ 0.34, 0.34, 0.34, 0.34 };// FL, BL, FR, BR
@@ -168,12 +170,12 @@ double BRheight_changeTiming[2] = { 30.0, 40.0 };	// change前, change後
 double shift[4 + 1][4] = { // FL, BL, FR, BR
 	{0.00, 0.03, 0.00, 0.03},
 	{0.00, 0.03, 0.00, 0.03},
-	{0.00, 0.03, 0.00, 0.03},
-	{0.00, 0.03, 0.00, 0.03},
-	{0.00, 0.03, 0.00, 0.03}
+	{-0.02, 0.03, -0.02, 0.03},
+	{-0.02, 0.03, -0.02, 0.03},
+	{-0.02, 0.03, -0.02, 0.03},
 };
 
-double height[2] = { 0.06, 0.06 };// front, back
+double height[2] = { 0.03, 0.03 };// front, back
 
 /* double height[4 + 1][2] = { // front, back
 	{ 0.1, 0.1 },
@@ -220,7 +222,7 @@ double addFL = 0.0, addBL = 0.0, addFR = 0.0, addBR = 0.0;
 double incrNum = 0.0;
 
 // まっすぐから左旋回の時間， 左旋回からまっすぐに戻るまでの時間， まっすぐから右旋回までの時間， 右旋回からまっすぐの時間
-double change_timing[4] = {100.0, 200.0, 300.0, 400.0};//{5.0, 2.0, 3.0, 4.0};//{1.0, 2.0, 3.0, 4.0};
+double change_timing[4] = {4.0, 7.5, 300.0, 400.0};//{5.0, 2.0, 3.0, 4.0};//{1.0, 2.0, 3.0, 4.0};
 
 int count = 0; // 時間計測するために使ってるだけ
 int wait_count = 0;
@@ -238,13 +240,13 @@ int height_count = 0;
 int kari = 0;
 
 // 距離センサ
-const int VL53L0X_GPIO[SENSOR_NUM] = {A2, A3};
+/* const int VL53L0X_GPIO[SENSOR_NUM] = {A2, A3};
 VL53L0X gSensor[SENSOR_NUM]; // 使用するセンサークラス配列
 double sensVal_left[4] = { 0.0, 0.0, 0.0, 0.0};
 double sensVal_right[4] = { 0.0, 0.0, 0.0, 0.0};
 unsigned char sensVal_count = 0;
 unsigned char sensVal_leftCount = 0;
-unsigned char sensVal_rightCount = 0;
+unsigned char sensVal_rightCount = 0; */
 
 // FLA:FLL / BLA:BLL / FRA:FRL / BRA:BRL
 byte init_1st = B00000000;//B11111111;//
@@ -261,6 +263,10 @@ boolean changeStroke_flag_BR = false;
 
 boolean halfStep = false;
 boolean pre_halfStep = halfStep;
+
+boolean sakyuMode = false;
+boolean sakyuMode_left = false;
+boolean sakyuMode_right = false;
 
 boolean FLheighet_flag = false;
 boolean BLheighet_flag = false;
@@ -398,7 +404,7 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B01000000 ) == 0 ) && readPinFL == 0 ){
-			addFL = 0.45 - FLlinear;//0.5030 - FLlinear;
+			addFL = 0.456 - FLlinear;//0.5030 - FLlinear;
 			saber1.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B01000000;
 		}else if( ( init_1st & B01000000 ) == 64 ){
@@ -476,7 +482,7 @@ void timerWarikomi_10ms() {
 		}
 		
 		if( ( ( init_1st & B00000001 ) == 0 ) &&  readPinBR == 0 ){
-			addBR = 0.45 - BRlinear;//0.47 - BRlinear;//0.5110 - BRlinear;
+			addBR = 0.46 - BRlinear;//0.47 - BRlinear;//0.5110 - BRlinear;
 			saber4.saberCmd(LINEAR_CMD, 0.0);
 			init_1st |= B00000001;
 		}else if( ( init_1st & B00000001 ) == 1 ){
@@ -642,6 +648,8 @@ void timerWarikomi_10ms() {
 			mode = 10;
 		}
 		
+		Serial.print(init_2nd, BIN);
+		Serial.print("\t");
 		Serial.print(FLlinear, 4);
 		Serial.print("\t");
 		Serial.print(BLlinear, 4);
@@ -793,6 +801,61 @@ void timerWarikomi_10ms() {
 			}
 		} */
 
+		// リミットスイッチ当たったら
+		if( !digitalRead( PIN_SAKYU_LEFT ) ){
+			sakyuMode_left = true;
+			//stroke[ 3 ][ LEFT ] = 0.0;
+			//stroke[ 3 ][ RIGHT ] = 0.2;
+		}
+		if( !digitalRead( PIN_SAKYU_RIGHT ) ){
+			sakyuMode_right = true;
+			//stroke[ 3 ][ LEFT ] = 0.2;
+			//stroke[ 3 ][ RIGHT ] = 0.0;
+		}
+
+		if( sakyuMode_left && sakyuMode_right && !sakyuMode ){
+			sakyuMode = true;
+			change_timing[ n ] = step_count + 1.0;
+			change_timing[ n + 1 ] = step_count + 3.5;
+			//change_timing[  ] = step_count + 4.0; // 砂丘を抜けたあと旋回
+			if( halfStep ){//0~0.5
+				FLheight_changeTiming[MAE] = step_count + 0.5;
+				FLheight_changeTiming[ATO] = step_count + 2.5;//1.5;
+
+				BLheight_changeTiming[MAE] = step_count + 4.0;//3.0;//2.0;
+				BLheight_changeTiming[ATO] = step_count + 6.0;//4.0;//3.0;
+
+				FRheight_changeTiming[MAE] = step_count + 1.0;
+				FRheight_changeTiming[ATO] = step_count + 3.0;//2.0;
+
+				BRheight_changeTiming[MAE] = step_count + 4.5;//2.5;//1.5;
+				BRheight_changeTiming[ATO] = step_count + 5.5;//4.5;//2.5;
+			}else{//0.5~1
+				FLheight_changeTiming[MAE] = step_count + 1.0;
+				FLheight_changeTiming[ATO] = step_count + 3.0;//2.0;
+
+				BLheight_changeTiming[MAE] = step_count + 4.5;//2.5;//1.5;
+				BLheight_changeTiming[ATO] = step_count + 6.5;//4.5;//2.5;
+
+				FRheight_changeTiming[MAE] = step_count + 1.5;
+				FRheight_changeTiming[ATO] = step_count + 3.5;//1.5;
+
+				BRheight_changeTiming[MAE] = step_count + 5.0;//3.0;//2.0;
+				BRheight_changeTiming[ATO] = step_count + 6.0;//4.0;//3.0;
+				/* FLheight_changeTiming[MAE] = step_count + 1.0;
+				FLheight_changeTiming[ATO] = step_count + 3.0;//2.0;
+
+				BLheight_changeTiming[MAE] = step_count + 4.5;//2.5;//1.5;
+				BLheight_changeTiming[ATO] = step_count + 6.5;//4.5;//2.5;
+
+				FRheight_changeTiming[MAE] = step_count + 0.5;
+				FRheight_changeTiming[ATO] = step_count + 2.5;//1.5;
+
+				BRheight_changeTiming[MAE] = step_count + 5.0;//3.0;//2.0;
+				BRheight_changeTiming[ATO] = step_count + 7.0;//4.0;//3.0; */				
+			}
+		}
+
 		// 前
 		if( FLheight_changeTiming[MAE] == step_count ){
 			ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
@@ -905,14 +968,14 @@ void timerWarikomi_10ms() {
 			ex_height = CHANGE_HEIGHT_SHORT / ( 0.5 / constNum );
 			x_height[ FR ] += ex_height;
 			if( !FRheighet_flag ){
-				//height[ FR ] += 0.05;
+				height[ FR ] += 0.05;
 				FRheighet_flag = true;
 			}
 			frontRight.changeJoge(x_height[ FR ]);
 			frontRight.changeLegHeight( height[ FR ] );
 		}else if( ( FRheight_changeTiming[ATO] + 0.5 ) == step_count ){
 			if( FRheighet_flag ){
-				//height[ FR ] -= 0.05;
+				height[ FR ] -= 0.05;
 				FRheighet_flag = false;
 			}
 			frontRight.changeLegHeight( height[ FR ] );
@@ -977,8 +1040,7 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					constNum = INT_TIME * div;// kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					
-				}
-				else { // 0.0~0.5
+				}else { // 0.0~0.5
 					// pair1 の歩幅とシフトを調節
 					TmpStroke[FL] = ( stroke[n][LEFT] + stroke[n + 1][LEFT] ) * 0.5 + ( shift[n][FL] - shift[n + 1][FL] );
 					TmpStroke[BR] = ( stroke[n][RIGHT] + stroke[n + 1][RIGHT] ) * 0.5 + ( shift[n][BR] - shift[n + 1][BR] );
@@ -1024,8 +1086,7 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					constNum = INT_TIME * div;//kataSokudo / ( TmpStroke[BL] + TmpStroke[FR] );
 					
-				}
-				else {
+				}else {
 					// pair1 の歩幅とシフトを調節
 					TmpStroke[FL] = ( stroke[n][LEFT] + stroke[n + 1][LEFT] ) * 0.5 + ( shift[n][FL] - shift[n + 1][FL] );
 					TmpStroke[BR] = ( stroke[n][RIGHT] + stroke[n + 1][RIGHT] ) * 0.5 + ( shift[n][BR] - shift[n + 1][BR] );
@@ -1058,8 +1119,7 @@ void timerWarikomi_10ms() {
 					div = 2.0 * kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					constNum = INT_TIME * div;//* kataSokudo / ( TmpStroke[FL] + TmpStroke[BR] );
 					
-				}
-				else {
+				}else {
 					// pair2 の歩幅はとシフト新しいやつ
 					TmpStroke[BL] =	stroke[n + 1][LEFT];
 					TmpStroke[FR] = stroke[n + 1][RIGHT];
@@ -1207,17 +1267,13 @@ void timerWarikomi_10ms() {
 		Serial.print("\t");
 		Serial.println(FRAsokudo, 4);//(FLLsokudo, 4);// */
 
-		/* Serial.print(step_count);
+		Serial.print(step_count);
 		Serial.print("\t");
-		Serial.print(refFRlinear, 4);
+		Serial.print(sakyuMode_left);
 		Serial.print("\t");
-		Serial.print(FRlinear, 4);
+		Serial.print(sakyuMode_right);
 		Serial.print("\t");
-		Serial.print(FRLcmd);
-		Serial.print("\t");
-		Serial.print(refFRLsokudo, 4);//
-		Serial.print("\t");
-		Serial.println(FRLsokudo, 4);// */
+		Serial.println(n);
 		
 
 		/* Serial.print(step_count);
@@ -1260,7 +1316,7 @@ void timerWarikomi_10ms() {
 			Serial.println(sensVal_right[0], 4);
 		} */
 
-		kari++;
+		/* kari++;
 
 		if( kari == 6 ){
 			Serial.print(step_count);
@@ -1273,7 +1329,7 @@ void timerWarikomi_10ms() {
 			if (gSensor[1].timeoutOccurred()) { Serial.print(" TIMEOUT"); }
 			Serial.println(sensVal_right[0], 4);
 			kari = 0;
-		}
+		} */
 	}
 }
 
@@ -1293,7 +1349,9 @@ void setup() {
 	pinMode(PIN_FRSW, INPUT);
 	pinMode(PIN_BRSW, INPUT);
 	pinMode(PIN_START, INPUT);
-	
+	pinMode(PIN_SAKYU_LEFT, INPUT);
+	pinMode(PIN_SAKYU_RIGHT, INPUT);
+
 	pinMode(PIN_15, OUTPUT);
 	digitalWrite(PIN_15, HIGH);
 	pinMode(PIN_51, OUTPUT);
@@ -1317,7 +1375,7 @@ void setup() {
 	
 	SWSerial1.begin(115200);
 	
-	Wire.begin();
+	/* Wire.begin();
 	for (int i = 0; i < SENSOR_NUM; i++){
 		pinMode(VL53L0X_GPIO[i], OUTPUT);
 		digitalWrite(VL53L0X_GPIO[i], LOW);
@@ -1337,7 +1395,7 @@ void setup() {
 			Serial.print(i);
 			Serial.println(" error");
 		}
-	}
+	} */
 	
 	FLLichiPID.PIDinit(0.0, 0.0);
 	FLAichiPID.PIDinit(0.0, 0.0);
