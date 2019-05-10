@@ -50,6 +50,7 @@
 #define PIN_START	(29)//(28)//
 #define PIN_ASHISAKI_FL	(44)
 #define PIN_ASHISAKI_FR	(45)
+#define PIN_GEREGE	(1)
 
 // mode
 #define STATE_INIT_1ST	(0)
@@ -138,16 +139,16 @@ mySaberClass saber4(&ST4);
 	宣言
 *****************************************/
 double kataSokudo = 0.2;//0.25;//0.2;//2;
-double kata_sokudo[10 + 1] = { 0.2, 0.16, 0.06, 0.08, 0.1, 0.08, 0.08, 0.07, 0.1, 0.1 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
+double kata_sokudo[10 + 1] = { 0.2, 0.16, 0.06, 0.08, 0.1, 0.1, 0.1, 0.07, 0.1, 0.1 };//{ 0.2, 0.18, 0.14, 0.1, 0.15 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.2, 0.2, 0.2, 0.2, 0.2 };//{ 0.25, 0.23, 0.26, 0.23, 0.27 };
 
 double stroke[10 + 1][2] = { // left, right
 	/* 0 */{ 0.2, 0.2 },//{ 0.18, 0.20 }, 
 	/* 1 */{ 0.1, 0.23 },//{ 0.16, 0.16 },//{ 0.16, 0.23 }, 
 	/* 2 */{ 0.08, 0.08 },//{ 0.12, 0.12 },//{ 0.1, 0.1 },//{ 0.13, 0.13 }, 
 	/* 3 */{ 0.085, 0.085 },//{ 0.11, 0.11 }, 
-	/* 4 */{ 0.1225, 0.1225 },//{ 0.2, 0.2 }
-	/* 5 */{ 0.0, 0.15 },
-	/* 6 */{ 0.15, 0.0 },
+	/* 4 */{ 0.115, 0.115 },//{ 0.2, 0.2 }
+	/* 5 */{ 0.1, 0.23 },//{ 0.07, 0.15 },
+	/* 6 */{ 0.2, 0.0 },//{ 0.14, 0.0 },//{ 0.12, 0.0 },
 	/* 7 */{ 0.08, 0.08 },
 	/* 8 */{ 0.15, 0.15 },
 	/* 9 */{ 0.15, 0.15 }
@@ -186,7 +187,7 @@ double shift[10 + 1][4] = { // FL, BL, FR, BR
 	{-0.02, 0.03, -0.02, 0.03},
 };
 
-double height[2] = { 0.03, 0.03 };// front, back
+double height[4] = { 0.03, 0.03, 0.03, 0.03 };//{ 0.03, 0.03 };//{ 0.03, 0.03 };// front, back
 
 /* double height[4 + 1][2] = { // front, back
 	{ 0.1, 0.1 },
@@ -233,7 +234,7 @@ double addFL = 0.0, addBL = 0.0, addFR = 0.0, addBR = 0.0;
 double incrNum = 0.0;
 
 // まっすぐから左旋回の時間， 左旋回からまっすぐに戻るまでの時間， まっすぐから右旋回までの時間， 右旋回からまっすぐの時間
-double change_timing[10] = {4.5, 8.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0 };//{4.0, 7.5, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0 };
+double change_timing[10] = { 4.5, 8.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0  };//{4.5, 8.0, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0 };//{4.0, 7.5, 300.0, 400.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0 };
 
 int count = 0; // 時間計測するために使ってるだけ
 int wait_count = 0;
@@ -764,7 +765,7 @@ void timerWarikomi_10ms() {
 		saber4.saberCmd(ANGLE_CMD, BRAcmd);
 		saber4.saberCmd(LINEAR_CMD, BRLcmd);
 
-		if( !digitalRead(PIN_START) ){
+		if( !digitalRead(PIN_GEREGE) ){//if( !digitalRead(PIN_START) ){
 			mode = 2;
 		}
 		
@@ -896,8 +897,8 @@ void timerWarikomi_10ms() {
 			//change_timing[  ] = step_count + 4.0; // 砂丘を抜けたあと旋回
 			if( halfStep ){//0~0.5
 				change_timing[ n + 2 ] = step_count + 7.0;// 左旋回
-				change_timing[ n + 3 ] = step_count + 10.0;//9.0;// 右旋回のタイミング
-				change_timing[ n + 4 ] = step_count + 16.0;//11.5;// 元の歩幅に戻るタイミング
+				change_timing[ n + 3 ] = step_count + 9.5;//10.5;// 右旋回のタイミング
+				change_timing[ n + 4 ] = step_count + 13.5;//14.5;// 元の歩幅に戻るタイミング
 
 				height_long_timing = change_timing[ n + 3 ];
 
@@ -914,8 +915,8 @@ void timerWarikomi_10ms() {
 				BRheight_changeTiming[ATO] = step_count + 5.5;
 			}else{//0.5~1
 				change_timing[ n + 2 ] = step_count + 7.5;// 左旋回
-				change_timing[ n + 3 ] = step_count + 10.5;//9.5;// 右旋回のタイミング
-				change_timing[ n + 4 ] = step_count + 16.5;//12.0;// 元の歩幅に戻るタイミング
+				change_timing[ n + 3 ] = step_count + 10.0;//11.5;// 右旋回のタイミング
+				change_timing[ n + 4 ] = step_count + 14.0;//15.0;// 元の歩幅に戻るタイミング
 
 				height_long_timing = change_timing[ n + 3 ];
 
@@ -988,14 +989,14 @@ void timerWarikomi_10ms() {
 				ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
 				x_height[ BL ] -= ex_height;
 				if( !BLheighet_flag ){
-					height[ BL ] += 0.05;
+					height[ BL ] += 0.06;//0.05;
 					BLheighet_flag = true;
 				}
 				BackLeft.changeJoge( x_height[ BL ] );
 				BackLeft.changeLegHeight( height[ BL ] );
 			}else if( ( BLheight_changeTiming[MAE] + 0.5 ) == step_count ){
 				if( BLheighet_flag ){
-					height[ BL ] -= 0.05;
+					height[ BL ] -= 0.06;//0.05;
 					BLheighet_flag = false;
 				}
 				BackLeft.changeLegHeight( height[ BL ] );
@@ -1005,14 +1006,14 @@ void timerWarikomi_10ms() {
 				ex_height = CHANGE_HEIGHT / ( 0.5 / constNum );
 				x_height[ FR ] -= ex_height;
 				if( !FRheighet_flag ){
-					height[ FR ] += 0.05;
+					height[ FR ] += 0.06;//0.05;
 					FRheighet_flag = true;
 				}
 				frontRight.changeJoge( x_height[ FR ] );
 				frontRight.changeLegHeight( height[ FR ] );
 			}else if( ( FRheight_changeTiming[MAE] + 0.5 ) == step_count ){
 				if( FRheighet_flag ){
-					height[ FR ] -= 0.05;
+					height[ FR ] -= 0.06;//0.05;
 					FRheighet_flag = false;
 				}
 				frontRight.changeLegHeight( height[ FR ] );
@@ -1543,15 +1544,14 @@ void timerWarikomi_10ms() {
 		Serial.print("\t");
 		Serial.println(FRAsokudo, 4);//(FLLsokudo, 4);// */
 
-		Serial.print(step_count);
+		Serial.print(height[ FL ], 4);
 		Serial.print("\t");
-		Serial.print(digitalRead(PIN_ASHISAKI_FL));
+		Serial.print(height[ BL ], 4);
 		Serial.print("\t");
-		Serial.print(digitalRead(PIN_ASHISAKI_FR));
+		Serial.print(height[ FR ], 4);
 		Serial.print("\t");
-		Serial.print(x_height[0], 4);
-		Serial.print("\t");
-		Serial.println(height_long_timing);
+		Serial.println(height[ BR ], 4);
+
 		
 
 		/* Serial.print(step_count);
@@ -1629,6 +1629,7 @@ void setup() {
 	pinMode(PIN_START, INPUT);
 	pinMode(PIN_ASHISAKI_FL, INPUT);
 	pinMode(PIN_ASHISAKI_FR, INPUT);
+	pinMode(PIN_GEREGE, INPUT);
 
 	pinMode(PIN_15, OUTPUT);
 	digitalWrite(PIN_15, HIGH);
@@ -1692,13 +1693,13 @@ void setup() {
 	BRLsokudoPID.PIDinit(0.0, 0.0);
 	BRAsokudoPID.PIDinit(0.0, 0.0);
 	frontLeft.setSayu(INT_TIME, PAIR1, constNum, stroke[0][LEFT], kataSokudo_FL, shift[0][FL]);
-	frontLeft.setJoge(INT_TIME, PAIR1, constNum, x_height[FL], stroke[0][LEFT], kataSokudo_FL, height[FRONT]);
+	frontLeft.setJoge(INT_TIME, PAIR1, constNum, x_height[FL], stroke[0][LEFT], kataSokudo_FL, height[FL]);
 	BackLeft.setSayu(INT_TIME, PAIR2, constNum, stroke[0][LEFT], kataSokudo_BL, shift[0][BL]);
-	BackLeft.setJoge(INT_TIME, PAIR2, constNum, x_height[BL], stroke[0][LEFT], kataSokudo_BL, height[BACK]);
+	BackLeft.setJoge(INT_TIME, PAIR2, constNum, x_height[BL], stroke[0][LEFT], kataSokudo_BL, height[BL]);
 	frontRight.setSayu(INT_TIME, PAIR2, constNum, stroke[0][RIGHT], kataSokudo_FR, shift[0][FR]);
-	frontRight.setJoge(INT_TIME, PAIR2, constNum, x_height[FR], stroke[0][RIGHT], kataSokudo_FR, height[FRONT]);
+	frontRight.setJoge(INT_TIME, PAIR2, constNum, x_height[FR], stroke[0][RIGHT], kataSokudo_FR, height[FR]);
 	BackRight.setSayu(INT_TIME, PAIR1, constNum, stroke[0][RIGHT], kataSokudo_BR, shift[0][BR]);
-	BackRight.setJoge(INT_TIME, PAIR1, constNum, x_height[BR], stroke[0][RIGHT], kataSokudo_BR, height[BACK]);
+	BackRight.setJoge(INT_TIME, PAIR1, constNum, x_height[BR], stroke[0][RIGHT], kataSokudo_BR, height[BR]);
 	
 	MsTimerTPU3::set((int)(INT_TIME * 1000), timerWarikomi_10ms); // 10ms period
 	MsTimerTPU3::start();
